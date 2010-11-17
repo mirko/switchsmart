@@ -1,0 +1,22 @@
+The kernel module only does the lowlevel (timing critical) communication with
+the rfm12-module (via SPI) - and exports a device node to userspace, as:
+
+    /dev/rfm12_ask
+
+Opening / closing the device will power on / power off TX respectively.
+
+The protocol used for communication between kernel- / userspace on top of
+/dev/rfm12_ask will be sth. like:
+
+    struct ask {
+        u8 sequence[],
+        u8 interval,
+        u8 count,
+    }
+
+There'll be a userspace library handling the communication with the kernel,
+exporting maybe functions, e.g. for remote controllable power sockets
+using the 2272 controller:
+
+    2272_on(u8 system_code, u8 socket_code);
+    2272_off(u8 system_code, u8 socket_code);
