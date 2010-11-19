@@ -8,11 +8,12 @@ Opening / closing the device will power on / power off TX respectively.
 The protocol used for communication between kernel- / userspace on top of
 /dev/rfm12_ask will be sth. like:
 
-    struct ask {
-        u8 sequence[],
-        u8 interval,
-        u8 count,
-    }
+#define DATA_MAX 512
+struct packet {
+    unsigned int duration;
+    unsigned int count;
+    char data[DATA_MAX]; // payload
+};
 
 There'll be a userspace library handling the communication with the kernel,
 exporting maybe functions, e.g. for remote controllable power sockets
