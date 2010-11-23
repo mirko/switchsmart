@@ -15,9 +15,33 @@ struct packet {
     char data[DATA_MAX]; // payload
 };
 
-There'll be a userspace library handling the communication with the kernel,
+There'll be a userspace library/application handling the communication with the kernel,
 exporting maybe functions, e.g. for remote controllable power sockets
 using the 2272 controller:
 
     2272_on(u8 system_code, u8 socket_code);
     2272_off(u8 system_code, u8 socket_code);
+
+The server side should know about all relevant information about used sockets,
+labels, location, status, etc.
+
+The configuration is stored in a config file, structured like this:
+
+[socket_A] // identifier (arbitrary)
+    category = "living room" // just for view, arbitrary
+    label = "ceiling light" // just for view, arbitraty
+//    type = SOCKET // type of radio device (defines e.g. type of UI widget (button, slider, etc.))
+    type = 2272
+    code = "00000 00001"
+
+[dimmer_living]
+    category = "bathroom"
+    label = "mirror ball" // yes, I do have a mirror ball in my bathroom, about 40 to be precise :)
+//    type = DIMMER
+    type = 1527
+    code = "00000000000000000000 00001"
+
+Applications shall be able to connect via network via XML-RPC / JSON-RPC.
+
+{
+    
