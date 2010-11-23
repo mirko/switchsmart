@@ -282,10 +282,9 @@ static ssize_t device_write(struct file *file, const char __user *buffer, size_t
     DBG_FMT("  header :: duration: %i, count: %i\n", foo.duration, foo.count);
     DBG_FMT("  payload :: as string: < %s >\n", foo.data);
 
-    if (!rfm12_ask_modulate(&foo))
-        return -EINVAL;
+    if (rfm12_ask_modulate(&foo) < 0)
+        return -EINVAL; // does not quite work...
 
-    DBG_FMT("return: %i\n", length);
     return length;
 }
 
@@ -315,10 +314,7 @@ int init_module(void)
 
 #ifdef SPI
     DBG_FMT("register spi driver\n");
-    int res_spi_register_driver = spi_register_driver(&rfm12_driver);
-    //int res_setup_sysfs = setup_sysfs();
-    //return res_spi_register_driver | res_setup_sysfs;
-    return res_spi_register_driver;
+    return spi_register_driver(&rfm12_driver);
 #endif
     return 0;
 }
