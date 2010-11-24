@@ -19,11 +19,24 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 
+all: mod_compile lib_compile app_compile
 
-obj-m += rfm12.o
+clean: mod_clean lib_clean app_clean
 
-all:
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD)/kernel modules
+mod_compile:
+	cd kernel && make
 
-clean:
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD)/kernel clean
+lib_compile:
+	cd lib && make
+
+app_compile: lib_compile
+	cd app && make
+
+mod_clean:
+	cd kernel && make clean
+
+lib_clean:
+	cd lib && make clean
+
+app_clean:
+	cd app && make clean
