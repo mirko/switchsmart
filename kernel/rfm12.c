@@ -24,6 +24,7 @@
 #include <linux/kernel.h>
 #include <linux/spi/spi.h>
 #include <linux/fs.h>
+#include <linux/delay.h>
 #include <asm/uaccess.h>
 
 #define DEVICE_NAME "rfm12_ask"
