@@ -19,17 +19,37 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include "core.h"
+#ifndef _RFM12_H
+#define _RFM12_H
 
-int write(packet *_packet) {
-    printf("data: %s\n", _packet->data);
-    FILE *fd = fopen(DEVICE_NAME, "w");
-    if (fd == NULL) {
-        printf("can not open device: %s\n", DEVICE_NAME);
-        return EXIT_FAILURE;
-    }
-    if (fwrite(_packet, 1, sizeof(_packet), fd) != sizeof(_packet))
-        return EXIT_FAILURE;
-    fclose(fd);
-    return 0;
-}
+#include <stdlib.h>
+#include <stdio.h>
+
+
+#define DEVICE_NAME "/dev/rfm12_ask"
+
+#define DATA_MAX 512
+
+typedef struct packet {
+    unsigned int duration;
+    unsigned int count;
+    char data[DATA_MAX]; // payload
+} packet;
+
+enum type {
+    SOCKET_TYPE_2272,
+};
+
+typedef struct device {
+    int type;
+    char* id;
+    char* label;
+    char* category;
+    packet (*on)(char system_code, char unit_code);
+    packet (*off)(char system_code, char unit_code);
+    int state;
+} device;
+
+#include "switches/2272.h"
+
+#endif

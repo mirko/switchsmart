@@ -19,17 +19,20 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-#include "core.h"
+#include "2272.h"
 
-int write(packet *_packet) {
-    printf("data: %s\n", _packet->data);
-    FILE *fd = fopen(DEVICE_NAME, "w");
-    if (fd == NULL) {
-        printf("can not open device: %s\n", DEVICE_NAME);
-        return EXIT_FAILURE;
-    }
-    if (fwrite(_packet, 1, sizeof(_packet), fd) != sizeof(_packet))
-        return EXIT_FAILURE;
-    fclose(fd);
-    return 0;
+packet switch_2272_on(char system_code, char unit_code) {
+    printf("switch on\n");
+    packet pkg = {
+        .duration = 100,
+        .count = 1,
+        .data = "101",
+    };
+    return pkg;
+}
+
+packet switch_2272_off(char system_code, char unit_code) {
+    printf("switch off\n");
+    packet pkg;
+    return pkg;
 }
