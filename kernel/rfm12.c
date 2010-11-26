@@ -31,14 +31,18 @@
 
 #define DATA_MAX 512
 
-//#define SPI 1
+#define SPI 1
 #define DEBUG 1
+
+#define BUG printk(KERN_ALERT "BUG! BUG! BUG! - %d <%s>\n", __LINE__, __FUNCTION__);
 
 #ifdef DEBUG
 //#  define DBG ( x ) printk (KERN_ALERT x)
 #  define DBG_FMT(fmt, ...) printk(KERN_ALERT "%d <%s> : " fmt, __LINE__, __FUNCTION__, __VA_ARGS__)
 #  define DBG(str) printk(KERN_ALERT "%d <%s> : " str, __LINE__, __FUNCTION__)
 #  define MARK() printk(KERN_ALERT "%d <%s>\n", __LINE__, __FUNCTION__)
+   //FIXME: REDUNDANT!
+#  define BUG printk(KERN_ALERT "BUG! BUG! BUG! - %d <%s>\n", __LINE__, __FUNCTION__);
 #else
 #  define DBG_FMT(fmt, ...)
 #  define DBG(str)
@@ -85,24 +89,50 @@ rfm12_ask_encode_tribit(int *code, int append, int byte, int cnt)
 
 int rfm12_ask_modulate(struct packet *packet)
 {
+    printk(KERN_ALERT "ptr <spi> points to: %p", spi);
     unsigned int duration = packet->duration;
     unsigned int count = packet->count;
     u8 *data = packet->data;
     DBG_FMT("got packet:\n  duration: %i\n  count: %i\n  data: %s\n", duration, count, data);
     int i;
+    u8 on;
     for(;count>0;count--) {
+        //make sure TX is powered OFF when start new round (should not happen (see below))
+        DBG("turn off TX\n");
+        rfm12_tx_off();
+        #ifdef BUG
+        if(on)
+            BUG;
+        #endif
+        on = 0x00;
         for(i=0;data[i]!='\0';i++) {
             unsigned int us = duration;
             switch(data[i]) {
                 case '1':
-                    DBG("switch on TX\n");
-                    rfm12_tx_on();
+                    DBG("1\n");
+                    //only switch on TX, if it's not yet on,
+                    //avoid unneeded transfer of data via SPI
+                    //and who knows what's the module doing
+                    //in this case anyway...
+                    if(!on) {
+                        DBG("switch on TX\n");
+                        rfm12_tx_on();
+                        u8 on = 0x01;
+                    }
                     for(;us>0;us--)
                         udelay(1);
                     break;
                 case '0':
-                    DBG("switch off TX\n");
-                    rfm12_tx_off();
+                    DBG("0\n");
+                    //only switch off TX, if it's not yet off,
+                    //avoid unneeded transfer of data via SPI
+                    //and who knows what's the module doing
+                    //in this case anyway...
+                    if(on) {
+                        DBG("switch off TX\n");
+                        rfm12_tx_off();
+                        u8 on = 0x00;
+                    }
                     for(;us>0;us--)
                         udelay(1);
                     break;
@@ -111,6 +141,20 @@ int rfm12_ask_modulate(struct packet *packet)
                     return -EINVAL;
             }
         }
+        //wait some time, before sending again
+        //wait only if data is going to be sent more than once and there will be a further round
+        //wait 5*duration microseconds before sending again (arbitrary)
+        //TODO: untested, verify!
+        if ((packet->count > 1) && (count != 0))
+            udelay(duration * 5);
+        //make sure TX is powered OFF when start new round (should not happen)
+        DBG("turn off TX\n");
+        rfm12_tx_off();
+        #ifdef BUG
+        if(on)
+            BUG; // TX shouldn't be left on - this should be fixed within the data array written to the character device if so
+        #endif
+        u8 on = 0x00;
     }
     return 0;
 }
@@ -135,20 +179,20 @@ rfm12_ask_trigger(int level, int us)
 }
 
 // inline to avoid unneeded jumps
-inline static void rfm12_tx_on(void)
+static void rfm12_tx_on(void)
 {
 #ifdef SPI
     word = 0x8200|(1<<5)|(1<<4)|(1<<3);
-    spi_write(spi, (const u8 *)&word, 2);
+    spi_write(spi, (const u8 *)&word, sizeof(word));
 #endif
 }
 
 // inline to avoid unneeded jumps
-inline static void rfm12_tx_off(void)
+static void rfm12_tx_off(void)
 {
 #ifdef SPI
     word = 0x8208;
-    spi_write(spi, (const u8 *)&word, 2);
+    spi_write(spi, (const u8 *)&word, sizeof(word));
 #endif
 }
 
@@ -237,13 +281,13 @@ static int __devinit rfm12_probe(struct spi_device *spi_)
     MARK();
     spi_write(spi, (const u8 *)&word, 2);        /* AFC settings: autotuning: -10kHz...+7,5kHz */
 
-    int command[3];
-    command[0] = 0;
-    command[1] = 5;
-    command[2] = 81;
-    DBG("sending (0,5,81), 76, 10\n");
-    rfm12_ask_2272_send(command, 76, 10);
-    DBG("finished\n");
+    //int command[3];
+    //command[0] = 0;
+    //command[1] = 5;
+    //command[2] = 81;
+    //DBG("sending (0,5,81), 76, 10\n");
+    //rfm12_ask_2272_send(command, 76, 10);
+    DBG("probe finished\n");
 
     return 0;
 }
@@ -314,7 +358,7 @@ int init_module(void)
     DBG_FMT("device major number is: %i\n", major_nr);
 
 #ifdef SPI
-    DBG_FMT("register spi driver\n");
+    DBG("register spi driver\n");
     return spi_register_driver(&rfm12_driver);
 #endif
     return 0;
