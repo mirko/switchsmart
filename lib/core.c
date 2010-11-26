@@ -22,13 +22,16 @@
 #include "core.h"
 
 int write(packet *_packet) {
+    printf("duration: %u\n", _packet->duration);
+    printf("count: %u\n", _packet->count);
     printf("data: %s\n", _packet->data);
+    printf("sizeof: %i\n", sizeof(_packet));
     FILE *fd = fopen(DEVICE_NAME, "w");
     if (fd == NULL) {
         printf("can not open device: %s\n", DEVICE_NAME);
         return EXIT_FAILURE;
     }
-    if (fwrite(_packet, 1, sizeof(_packet), fd) != sizeof(_packet))
+    if (fwrite(_packet, 1, sizeof(*_packet), fd) != sizeof(*_packet))
         return EXIT_FAILURE;
     fclose(fd);
     return 0;
