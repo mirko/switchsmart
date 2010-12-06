@@ -98,7 +98,7 @@ int rfm12_ask_modulate(struct packet *packet)
     u8 on;
     for(;count>0;count--) {
         //make sure TX is powered OFF when start new round (should not happen (see below))
-        DBG("turn off TX\n");
+        DBG("switch off TX (top)\n");
         rfm12_tx_off();
         #ifdef BUG
         if(on)
@@ -107,6 +107,7 @@ int rfm12_ask_modulate(struct packet *packet)
         on = 0x00;
         for(i=0;data[i]!='\0';i++) {
             unsigned int us = duration;
+            DBG_FMT("module on? %x\n", on);
             switch(data[i]) {
                 case '1':
                     DBG("1\n");
@@ -114,10 +115,11 @@ int rfm12_ask_modulate(struct packet *packet)
                     //avoid unneeded transfer of data via SPI
                     //and who knows what's the module doing
                     //in this case anyway...
-                    if(!on) {
+                    //if(!on) {
+                    if(on == 0x00) {
                         DBG("switch on TX\n");
                         rfm12_tx_on();
-                        u8 on = 0x01;
+                        on = 0x01;
                     }
                     for(;us>0;us--)
                         udelay(1);
@@ -128,10 +130,11 @@ int rfm12_ask_modulate(struct packet *packet)
                     //avoid unneeded transfer of data via SPI
                     //and who knows what's the module doing
                     //in this case anyway...
-                    if(on) {
+                    //if(on) {
+                    if(on == 0x01) {
                         DBG("switch off TX\n");
                         rfm12_tx_off();
-                        u8 on = 0x00;
+                        on = 0x00;
                     }
                     for(;us>0;us--)
                         udelay(1);
@@ -148,13 +151,14 @@ int rfm12_ask_modulate(struct packet *packet)
         if ((packet->count > 1) && (count != 0))
             udelay(duration * 5);
         //make sure TX is powered OFF when start new round (should not happen)
-        DBG("turn off TX\n");
+        DBG("switch off TX (bot)\n");
         rfm12_tx_off();
         #ifdef BUG
-        if(on)
+        //if(on)
+        if(on = 0x01)
             BUG; // TX shouldn't be left on - this should be fixed within the data array written to the character device if so
         #endif
-        u8 on = 0x00;
+        on = 0x00;
     }
     return 0;
 }
@@ -182,7 +186,8 @@ rfm12_ask_trigger(int level, int us)
 static void rfm12_tx_on(void)
 {
 #ifdef SPI
-    word = 0x8200|(1<<5)|(1<<4)|(1<<3);
+    //word = 0x8200|(1<<5)|(1<<4)|(1<<3);
+    word = 0x823D;
     spi_write(spi, (const u8 *)&word, sizeof(word));
 #endif
 }
@@ -191,7 +196,8 @@ static void rfm12_tx_on(void)
 static void rfm12_tx_off(void)
 {
 #ifdef SPI
-    word = 0x8208;
+    //word = 0x8208;
+    word = 0x820D;
     spi_write(spi, (const u8 *)&word, sizeof(word));
 #endif
 }
@@ -326,6 +332,15 @@ static ssize_t device_write(struct file *file, const char __user *buffer, size_t
         return -EFAULT;
     DBG_FMT("  header :: duration: %i, count: %i\n", foo.duration, foo.count);
     DBG_FMT("  payload :: as string: < %s >\n", foo.data);
+
+    // simple test, static and without any logic
+    //MARK();
+    //rfm12_tx_on();
+    //MARK();
+    //udelay(10000);
+    //MARK();
+    //rfm12_tx_off();
+    //MARK();
 
     if (rfm12_ask_modulate(&foo) < 0)
         return -EINVAL; // does not quite work...
