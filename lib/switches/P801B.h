@@ -22,9 +22,10 @@
 #ifndef _P801B_H
 #define _P801B_H
 
-#include "../core.h"
+#include "core.h"
 
-packet switch_P801B_on(char system_code, char unit_code);
-packet switch_P801B_off(char system_code, char unit_code);
+//struct packet switch_P801B_on(char* code);
+struct packet switch_P801B_on();
+struct packet switch_P801B_off(char* code);
 
 #endif

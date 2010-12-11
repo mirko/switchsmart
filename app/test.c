@@ -27,16 +27,17 @@ int main(void)
     //dev_arr = malloc(sizeof(device) * 2);
     //if(!dev_arr)
     //    return NULL;
-    device dev_arr[2];
-    device tmp;
+    struct device dev_arr[2];
+    struct device tmp;
 
-    tmp.type = SOCKET_TYPE_2272;
+    //tmp.type = SOCKET_TYPE_2272;
+    tmp.type = 0;
     tmp.id = "ROOM_1__LAMP_1";
     tmp.category = "living room";
     tmp.label = "ceiling light";
-    tmp.on = &switch_2272_on,
-    tmp.off = &switch_2272_off,
-    dev_arr[0] = tmp;
+    tmp.on = &switch_P801B_on;
+    tmp.off = &switch_P801B_off;
+    //dev_arr[0] = tmp;
 
     //tmp.type = SOCKET_TYPE_2272;
     //tmp.id = "ROOM_1__LAMP_2";
@@ -46,10 +47,16 @@ int main(void)
     ////tmp.off_function_t = *2272_off,
     //dev_arr[1] = tmp;
 
-    printf("test: %p\n", dev_arr[0].on);
+//    printf("test: %p\n", dev_arr[0].on);
     //printf("test: %s\n", dev_arr[1].name);
 
-    packet pkg = (dev_arr[0].on)(0x00, 0x01);
+    struct packet pkg;
+
+    pkg = (tmp.on)("0000000100");
+//                  sys  unit
+
+    printf("res: <%s>\n", pkg.data);
+    //printf("string: <%s>\n", str);
 
     return write(&pkg);
 }

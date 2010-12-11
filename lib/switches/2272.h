@@ -22,9 +22,9 @@
 #ifndef _2272_H
 #define _2272_H
 
-#include "../core.h"
+#include "core.h"
 
-packet switch_2272_on(char system_code, char unit_code);
-packet switch_2272_off(char system_code, char unit_code);
+struct packet switch_2272_on(char system_code, char unit_code);
+struct packet switch_2272_off(char system_code, char unit_code);
 
 #endif

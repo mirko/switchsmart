@@ -21,17 +21,21 @@
 
 #include "core.h"
 
-int write(packet *_packet) {
+int write(struct packet *_packet) {
+    FILE *fd = fopen(DEVICE_NAME, "w");
+    size_t res;
+
     printf("duration: %u\n", _packet->duration);
     printf("count: %u\n", _packet->count);
     printf("data: %s\n", _packet->data);
-    printf("sizeof: %i\n", sizeof(_packet));
-    FILE *fd = fopen(DEVICE_NAME, "w");
+    printf("sizeof: %lu\n", sizeof(_packet));
+
     if (fd == NULL) {
         printf("can not open device: %s\n", DEVICE_NAME);
         return EXIT_FAILURE;
     }
-    if (fwrite(_packet, 1, sizeof(*_packet), fd) != sizeof(*_packet))
+    if (res = fwrite(_packet, 1, sizeof(*_packet), fd) != sizeof(*_packet))
+        printf("couldn't write full packet of %lu Bytes but only %lu Bytes\n", sizeof(*_packet), res);
         return EXIT_FAILURE;
     fclose(fd);
     return 0;

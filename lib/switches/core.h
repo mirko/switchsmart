@@ -19,20 +19,18 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#ifndef _SWITCHES_H
+#define _SWITCHES_H
+
+#include "../core.h"
+
+// include of radio devices - needed by actual applications which just include this header file and assign functions to function pointers
 #include "2272.h"
+#include "P801B.h"
 
-struct packet switch_2272_on(char system_code, char unit_code) {
-    printf("switch on\n");
-    struct packet pkg = {
-        .duration = 100,
-        .count = 1,
-        .data = "101",
-    };
-    return pkg;
-}
+// struct switches {
+//      struct packet (*on)(char system_code, char unit_code);
+//      struct packet (*off)(char system_code, char unit_code);
+// };
 
-struct packet switch_2272_off(char system_code, char unit_code) {
-    printf("switch off\n");
-    struct packet pkg;
-    return pkg;
-}
+#endif

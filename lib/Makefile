@@ -21,7 +21,7 @@
 
 NAME = librfm12.so
 
-SWITCHES = switches/2272.o
+SWITCHES = switches/2272.o switches/P801B.o
 
 ###
 

@@ -26,30 +26,36 @@
 #include <stdio.h>
 
 
-#define DEVICE_NAME "/dev/rfm12_ask"
+#include "switches/core.h"
+
+#define DEVICE_NAME "/tmp/foo"
 
 #define DATA_MAX 512
 
-typedef struct packet {
+char buf[DATA_MAX];
+
+struct packet {
     unsigned int duration;
     unsigned int count;
     char data[DATA_MAX]; // payload
-} packet;
+};
 
 enum type {
     SOCKET_TYPE_2272,
 };
 
-typedef struct device {
+struct device {
     int type;
     char* id;
     char* label;
     char* category;
-    packet (*on)(char system_code, char unit_code);
-    packet (*off)(char system_code, char unit_code);
-    int state;
-} device;
-
-#include "switches/2272.h"
+    int state; // MIN_INT = not available
+    //union {
+    //    struct on_off_10bit;
+    //} control;
+    //struct switches*    control;
+    struct packet (*on)(char* code);
+    struct packet (*off)(char* code);
+};
 
 #endif
