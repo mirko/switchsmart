@@ -195,7 +195,7 @@ static void rfm12_tx_on(void)
 {
 #ifdef SPI
     //word = 0x8200|(1<<5)|(1<<4)|(1<<3);
-    word = 0x823D;
+    word = 0x8238;
     spi_write(spi, (const u8 *)&word, sizeof(word));
 #endif
 }
@@ -205,7 +205,7 @@ static void rfm12_tx_off(void)
 {
 #ifdef SPI
     //word = 0x8208;
-    word = 0x820D;
+    word = 0x8208;
     spi_write(spi, (const u8 *)&word, sizeof(word));
 #endif
 }
