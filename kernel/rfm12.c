@@ -26,10 +26,12 @@
 #include <linux/fs.h>
 #include <linux/delay.h>
 #include <asm/uaccess.h>
+#include <linux/gpio.h>
 
 #define DEVICE_NAME "rfm12_ask"
-
 #define DATA_MAX 512
+
+#define GPIO_TX 1 // do not set if no GPIO should be toggled while transmitting data
 
 #define SPI 1
 #define DEBUG 1
@@ -100,10 +102,10 @@ int rfm12_ask_modulate(struct packet *packet)
         //make sure TX is powered OFF when start new round (should not happen (see below))
         DBG("switch off TX (top)\n");
         rfm12_tx_off();
-        #ifdef BUG
-        if(on)
-            BUG;
-        #endif
+//        #ifdef BUG
+//        if(on)
+//            BUG;
+//        #endif
         on = 0x00;
         for(i=0;data[i]!='\0';i++) {
             unsigned int us = duration;
@@ -117,6 +119,9 @@ int rfm12_ask_modulate(struct packet *packet)
                     //in this case anyway...
                     //if(!on) {
                     if(on == 0x00) {
+#ifdef GPIO_TX
+                        gpio_set_value(GPIO_TX, 1);
+#endif
                         DBG("switch on TX\n");
                         rfm12_tx_on();
                         on = 0x01;
@@ -132,6 +137,9 @@ int rfm12_ask_modulate(struct packet *packet)
                     //in this case anyway...
                     //if(on) {
                     if(on == 0x01) {
+#ifdef GPIO_TX
+                        gpio_set_value(GPIO_TX, 0);
+#endif
                         DBG("switch off TX\n");
                         rfm12_tx_off();
                         on = 0x00;
@@ -365,6 +373,11 @@ int init_module(void)
 {
     DBG("init module\n");
     int major_nr = register_chrdev(0, DEVICE_NAME, &fops);
+
+#ifdef GPIO_TX
+    int gpio_valid = gpio_is_valid(GPIO_TX);
+    gpio_direction_output(GPIO_TX, 0);
+#endif
 
     if (major_nr < 0) {
         DBG_FMT("Registering char device failed with %d\n", major_nr);
