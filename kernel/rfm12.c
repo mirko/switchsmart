@@ -28,7 +28,7 @@
 #include <asm/uaccess.h>
 #include <linux/gpio.h>
 
-#define DEVICE_NAME "rfm12_ask"
+#define DEVICE_NAME "rfm12"
 #define DATA_MAX 512
 
 #define GPIO_TX 1 // do not set if no GPIO should be toggled while transmitting data
@@ -196,7 +196,7 @@ static void rfm12_tx_on(void)
 #ifdef SPI
     //word = 0x8200|(1<<5)|(1<<4)|(1<<3);
     word = 0x8238;
-    spi_write(spi, (const u8 *)&word, sizeof(word));
+    spi_write(spi, (const u8 *)&word, 2);
 #endif
 }
 
@@ -206,7 +206,7 @@ static void rfm12_tx_off(void)
 #ifdef SPI
     //word = 0x8208;
     word = 0x8208;
-    spi_write(spi, (const u8 *)&word, sizeof(word));
+    spi_write(spi, (const u8 *)&word, 2);
 #endif
 }
 

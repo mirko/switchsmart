@@ -28,7 +28,7 @@
 
 #include "switches/core.h"
 
-#define DEVICE_NAME "/tmp/foo"
+#define DEVICE_NAME "/dev/rfm12"
 
 #define DATA_MAX 512
 
