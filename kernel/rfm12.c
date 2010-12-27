@@ -71,8 +71,8 @@ static ssize_t device_write(struct file *, const char *, size_t, loff_t *);
 static void _write_spi(u16 _word)
 {
 #ifdef SPI
-    word[0] = _word >> 8;
-    word[1] = _word &0xff;
+    word[0] = _word &0xff;
+    word[1] = _word >> 8;
     spi_write(spi, (const u8 *)&word, 2);
 #endif
 }
