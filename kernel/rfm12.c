@@ -115,7 +115,7 @@ int rfm12_ask_modulate(struct packet *packet)
         #endif
         on = 0x00;
         for(i=0;data[i]!='\0';i++) {
-            unsigned int ns = duration;
+            unsigned int us = duration;
             DBG_FMT("module on? %x\n", on);
             switch(data[i]) {
                 case '1':
@@ -133,8 +133,8 @@ int rfm12_ask_modulate(struct packet *packet)
                         rfm12_tx_on();
                         on = 0x01;
                     }
-                    for(;ns>0;ns--)
-                        ndelay(1);
+                    for(;us>0;us--)
+                        udelay(1);
                     break;
                 case '0':
                     DBG("0\n");
@@ -151,8 +151,8 @@ int rfm12_ask_modulate(struct packet *packet)
                         rfm12_tx_off();
                         on = 0x00;
                     }
-                    for(;ns>0;ns--)
-                        ndelay(1);
+                    for(;us>0;us--)
+                        udelay(1);
                     break;
                default:
                     DBG_FMT("MOEP! character <%c> is invalid!\n", data[i]);
@@ -164,7 +164,7 @@ int rfm12_ask_modulate(struct packet *packet)
         //wait 5*duration microseconds before sending again (arbitrary)
         //TODO: untested, verify!
         if ((packet->count > 1) && (count != 0))
-            ndelay(duration * 5);
+            udelay(duration * 5);
         //make sure TX is powered OFF when start new round (should not happen)
         DBG("switch off TX (bot)\n");
         rfm12_tx_off();
