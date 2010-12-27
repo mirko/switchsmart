@@ -36,8 +36,6 @@
 #define SPI 1
 #define DEBUG 1
 
-#define BUG printk(KERN_ALERT "BUG! BUG! BUG! - %d <%s>\n", __LINE__, __FUNCTION__);
-
 #ifdef DEBUG
 //#  define DBG ( x ) printk (KERN_ALERT x)
 #  define DBG_FMT(fmt, ...) printk(KERN_ALERT "%d <%s> : " fmt, __LINE__, __FUNCTION__, __VA_ARGS__)
@@ -55,7 +53,7 @@ int ask_2272_1527_pulse_duty_factor[4]={13,5,7,11};
 
 struct spi_device *spi;
 
-u16 word;
+u8 word[2];
 
 struct packet {
     unsigned int duration;
@@ -69,6 +67,15 @@ static int device_open(struct inode *, struct file *);
 static int device_release(struct inode *, struct file *);
 static ssize_t device_read(struct file *, char *, size_t, loff_t *);
 static ssize_t device_write(struct file *, const char *, size_t, loff_t *);
+
+static void _write_spi(u16 _word)
+{
+#ifdef SPI
+    word[0] = _word >> 8;
+    word[1] = _word &0xff;
+    spi_write(spi, (const u8 *)&word, 2);
+#endif
+}
 
 static void rfm12_tx_on(void);
 static void rfm12_tx_off(void);
@@ -102,10 +109,10 @@ int rfm12_ask_modulate(struct packet *packet)
         //make sure TX is powered OFF when start new round (should not happen (see below))
         DBG("switch off TX (top)\n");
         rfm12_tx_off();
-//        #ifdef BUG
-//        if(on)
-//            BUG;
-//        #endif
+        #ifdef DEBUG
+        if(on)
+            BUG;
+        #endif
         on = 0x00;
         for(i=0;data[i]!='\0';i++) {
             unsigned int us = duration;
@@ -161,7 +168,7 @@ int rfm12_ask_modulate(struct packet *packet)
         //make sure TX is powered OFF when start new round (should not happen)
         DBG("switch off TX (bot)\n");
         rfm12_tx_off();
-        #ifdef BUG
+        #ifdef DEBUG
         //if(on)
         if(on = 0x01)
             BUG; // TX shouldn't be left on - this should be fixed within the data array written to the character device if so
@@ -176,15 +183,13 @@ rfm12_ask_trigger(int level, int us)
 {
     if (level)
     {
-        word = 0x8200|(1<<5)|(1<<4)|(1<<3);
-        spi_write(spi, (const u8 *)&word, 2);
+        _write_spi(0x8200|(1<<5)|(1<<4)|(1<<3));
         for(;us>0;us--)
             udelay(1);
     }
     else
     {
-        word = 0x8208;
-        spi_write(spi, (const u8 *)&word, 2);
+        _write_spi(0x8208);
         for(;us>0;us--)
             udelay(1);
     }
@@ -194,9 +199,8 @@ rfm12_ask_trigger(int level, int us)
 static void rfm12_tx_on(void)
 {
 #ifdef SPI
-    //word = 0x8200|(1<<5)|(1<<4)|(1<<3);
-    word = 0x8238;
-    spi_write(spi, (const u8 *)&word, 2);
+    //_write_spi(0x8200|(1<<5)|(1<<4)|(1<<3));
+    _write_spi(0x8238);
 #endif
 }
 
@@ -204,17 +208,8 @@ static void rfm12_tx_on(void)
 static void rfm12_tx_off(void)
 {
 #ifdef SPI
-    //word = 0x8208;
-    word = 0x8208;
-    spi_write(spi, (const u8 *)&word, 2);
-#endif
-}
-
-static void _write_spi(u8 _word)
-{
-#ifdef SPI
-    word = _word;
-    spi_write(spi, (const u8 *)&word, 2);
+    //_write_spi(0x8208);
+    _write_spi(0x8208);
 #endif
 }
 
@@ -230,9 +225,8 @@ rfm12_ask_2272_send(int *command, int delay, int cnt)
         rfm12_ask_encode_tribit(code, i*16, command[i], 8);
     }
     code[48]=7; //sync
-    word = 0x8200|(1<<5)|(1<<4)|(1<<3);
+    _write_spi(0x8200|(1<<5)|(1<<4)|(1<<3));
     printk(KERN_ALERT "??\n");
-    spi_write(spi, (const u8 *)&word, 2);     // 2. PwrMngt TX on
     int ii;
     for(ii=cnt;ii>0;ii--)                             // Sequenz cnt send
     {
@@ -246,9 +240,6 @@ rfm12_ask_2272_send(int *command, int delay, int cnt)
         printk(KERN_ALERT "running trigger (2)\n");
         rfm12_ask_trigger(0,24*delay);
     }
-    word = 0x8208;
-    printk(KERN_ALERT "set <0x8208>\n");
-    spi_write(spi, (const u8 *)&word, 2);
 }
 
 #define RFM12BAND(freq)    (freq<800000?0x80D7:0x80E7)
@@ -264,36 +255,29 @@ static int __devinit rfm12_probe(struct spi_device *spi_)
     DBG("setup spi device\n");
     spi_setup(spi);
 
-    //word = 0x0000;
+    //_write_spi(0x0000);
     //spi_write(spi, (const u8 *)&word, 2);
 
-    word = 0x0000;
-    MARK();
-    spi_write(spi, (const u8 *)&word, 2);
-    spi_read(spi, (u8 *)&word, 2);
-    MARK();
+//    _write_spi(0x0000);
+//    MARK();
+//    spi_write(spi, (const u8 *)&word, 2);
+//    spi_read(spi, (u8 *)&word, 2);
+//    MARK();
 
-    word = 0xC0E0;
+    _write_spi(0xC0E0);
     MARK();
-    spi_write(spi, (const u8 *)&word, 2);        /* AVR CLK: 10MHz */
-    word = RFM12BAND(433920);
+    _write_spi(RFM12BAND(433920));
     MARK();
-    spi_write(spi, (const u8 *)&word, 2);    /* Select BAND, Enable FIFO */
-    word = 0xC2AB;
+    _write_spi(0xC2AB);
     MARK();
-    spi_write(spi, (const u8 *)&word, 2);        /* Data Filter: internal */
-    word = 0xCA81;
+    _write_spi(0xCA81);
     MARK();
-    spi_write(spi, (const u8 *)&word, 2);        /* Set FIFO mode */
-    word = 0xE000;
+    _write_spi(0xE000);
     MARK();
-    spi_write(spi, (const u8 *)&word, 2);        /* disable wakeuptimer */
-    word = 0xC800;
+    _write_spi(0xC800);
     MARK();
-    spi_write(spi, (const u8 *)&word, 2);        /* disable low duty cycle */
-    word = 0xC4F7;
+    _write_spi(0xC4F7);
     MARK();
-    spi_write(spi, (const u8 *)&word, 2);        /* AFC settings: autotuning: -10kHz...+7,5kHz */
 
     //int command[3];
     //command[0] = 0;
@@ -376,6 +360,8 @@ int init_module(void)
 
 #ifdef GPIO_TX
     int gpio_valid = gpio_is_valid(GPIO_TX);
+    if (!gpio_valid)
+        return -EINVAL;
     gpio_direction_output(GPIO_TX, 0);
 #endif
 
