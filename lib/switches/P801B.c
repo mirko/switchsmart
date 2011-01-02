@@ -63,7 +63,7 @@ struct packet _p801b_ctrl_pkg(char* code) {
     memcpy(data+WORD_SIZE*5, _p801b_convert_unitcode(code+5), WORD_SIZE*5);
     data[WORD_SIZE*10] = '\0';
     struct packet pkg = {
-        .duration = 0,
+        .duration = 200 - TRANS_DELAY,
         .count = 20,
     };
     strcpy(pkg.data, data);

@@ -28,11 +28,9 @@ char* _2272_convert(char* code) {
         //printf("<i> is: %d, code[%d]: %c\n", i, i, code[i]);
         switch(code[i]) {
             case '0':
-                //memcpy(buf+i*WORD_SIZE, "1000", WORD_SIZE);
                 memcpy(buf+i*WORD_SIZE, "100110", WORD_SIZE); // 0 = 100 110 = dip-switch is down
                 break;
             case '1':
-                //memcpy(buf+i*WORD_SIZE, "1110", WORD_SIZE);
                 memcpy(buf+i*WORD_SIZE, "100100", WORD_SIZE); // 1 = 100 100 = dip-switch is up
                 break;
             default:
@@ -48,7 +46,7 @@ struct packet _2272_ctrl_pkg(char* code) {
     memcpy(data, _2272_convert(code), WORD_SIZE*10);
     data[WORD_SIZE*10] = '\0';
     struct packet pkg = {
-        .duration = 300,
+        .duration = 500 - TRANS_DELAY,
         .count = 10,
     };
     strcpy(pkg.data, data);

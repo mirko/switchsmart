@@ -25,12 +25,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
 #include "switches/core.h"
 
 #define DEVICE_NAME "/dev/rfm12"
 
+// if changing, do not forget to change the associated within the kernel module as well
 #define DATA_MAX 512
+
+// define delay in microsends which is caused by the SPI transfer and therewith board specific - the actual specified TX duration is reduced by this value
+#define TRANS_DELAY 200 // value for Netgear WGT634U - SPI via GPIOs / bitbanging
 
 char buf[DATA_MAX];
 
