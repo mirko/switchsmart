@@ -22,15 +22,26 @@
 #include "P801B.h"
 #define WORD_SIZE 8
 
-/* FACTS FOR SURE:
- *  ._ = short_long  = dip down = 1000 1110
- *  .. = short_short = dip up   = 1000 1000
- */
-
-char* _p801b_convert(char* code) {
+char* _p801b_convert_systemcode(char* code) {
     int i, j;
     for(i=0;code[i]!='\0';i++) {
-        //printf("<i> is: %d, code[%d]: %c\n", i, i, code[i]);
+        switch(code[i]) {
+            case '0':
+                memcpy(buf+i*WORD_SIZE, "10001000", WORD_SIZE); // 0 = 1000 1000 = dip-switch is down
+                break;
+            case '1':
+                memcpy(buf+i*WORD_SIZE, "11101110", WORD_SIZE); // 1 = 1110 1110 = dip-switch is up
+                break;
+            default:
+                printf("BUG!\n");
+        }
+    }
+    return &buf;
+}
+
+char* _p801b_convert_unitcode(char* code) {
+    int i, j;
+    for(i=0;code[i]!='\0';i++) {
         switch(code[i]) {
             case '0':
                 memcpy(buf+i*WORD_SIZE, "10001110", WORD_SIZE); // 0 = 1000 1110 = dip-switch is down
@@ -42,17 +53,18 @@ char* _p801b_convert(char* code) {
                 printf("BUG!\n");
         }
     }
-    buf[i*WORD_SIZE] = '\0';
     return &buf;
 }
 
 struct packet _p801b_ctrl_pkg(char* code) {
     printf("switch\n");
     char data[DATA_MAX];
-    memcpy(data, _p801b_convert(code), WORD_SIZE*10);
+    memcpy(data, _p801b_convert_systemcode(code), WORD_SIZE*10);
+    memcpy(data+WORD_SIZE*5, _p801b_convert_unitcode(code+5), WORD_SIZE*5);
+    data[WORD_SIZE*10] = '\0';
     struct packet pkg = {
-        .duration = 200,
-        .count = 1,
+        .duration = 0,
+        .count = 20,
     };
     strcpy(pkg.data, data);
     return pkg;
@@ -61,15 +73,13 @@ struct packet _p801b_ctrl_pkg(char* code) {
 struct packet switch_P801B_on(char* code) {
     printf("switch on\n");
     struct packet pkg = _p801b_ctrl_pkg(code);
-    //TODO: one "1000 1000" in the end might be missing
-    memcpy(pkg.data+10*WORD_SIZE, "1000111010001000", 16); // on => 1000 1110 1000 1000
+    memcpy(pkg.data+10*WORD_SIZE, "10001110100010001000", 5*WORD_SIZE); // on => 1000 1110 1000 1000, sync => 1000
     return pkg;
 }
 
 struct packet switch_P801B_off(char* code) {
     printf("switch off\n");
     struct packet pkg = _p801b_ctrl_pkg(code);
-    //TODO: one "1000 1000" in the end might be missing
-    memcpy(pkg.data+10*WORD_SIZE, "1000100010001110", 16); // off => 1000 1000 1000 1110
+    memcpy(pkg.data+10*WORD_SIZE, "10001000100011101000", 5*WORD_SIZE); // off => 1000 1000 1000 1110, sync => 1000
     return pkg;
 }
