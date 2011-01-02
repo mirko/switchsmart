@@ -34,7 +34,7 @@
 #define GPIO_TX 3 // do not set if no GPIO should be toggled while transmitting data
 
 #define SPI 1
-#define DEBUG 1
+//#define DEBUG 1
 
 #ifdef DEBUG
 //#  define DBG ( x ) printk (KERN_ALERT x)
