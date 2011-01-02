@@ -35,8 +35,8 @@ int main(void)
     tmp.id = "ROOM_1__LAMP_1";
     tmp.category = "living room";
     tmp.label = "ceiling light";
-    tmp.on = &switch_2272_on;
-    tmp.off = &switch_2272_off;
+    tmp.on = &switch_P801B_on;
+    tmp.off = &switch_P801B_off;
     //dev_arr[0] = tmp;
 
     //tmp.type = SOCKET_TYPE_2272;

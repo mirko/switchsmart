@@ -35,8 +35,8 @@ int main(void)
     tmp.id = "ROOM_1__LAMP_1";
     tmp.category = "living room";
     tmp.label = "ceiling light";
-    tmp.on = &switch_2272_on;
-    tmp.off = &switch_2272_off;
+    tmp.on = &switch_P801B_on;
+    tmp.off = &switch_P801B_off;
     //dev_arr[0] = tmp;
 
     //tmp.type = SOCKET_TYPE_2272;
@@ -52,7 +52,7 @@ int main(void)
 
     struct packet pkg;
 
-    pkg = (tmp.off)("1111110000");
+    pkg = (tmp.on)("1111110000");
 //                  sys  unit
 
     printf("count:    <%i>\n", pkg.count);

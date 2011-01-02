@@ -52,7 +52,7 @@ int main(void)
 
     struct packet pkg;
 
-    pkg = (tmp.on)("0000000100");
+    pkg = (tmp.on)("1111110000");
 //                  sys  unit
 
     printf("count:    <%i>\n", pkg.count);
