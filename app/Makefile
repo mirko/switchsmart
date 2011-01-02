@@ -23,7 +23,8 @@ CFLAGS += -L../lib
 LDFLAGS += -lrfm12
 
 all:
-	$(CC) $(CFLAGS) $(LDFLAGS) test.c -o test
+	$(CC) $(CFLAGS) $(LDFLAGS) rfm12_2272_A_on.c -o rfm12_2272_A_on
+	$(CC) $(CFLAGS) $(LDFLAGS) rfm12_2272_A_off.c -o rfm12_2272_A_off
 
 clean:
-	rm -f test
+	rm -f rfm12_2272_A_on rfm12_2272_A_off
