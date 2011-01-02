@@ -35,8 +35,8 @@ int main(void)
     tmp.id = "ROOM_1__LAMP_1";
     tmp.category = "living room";
     tmp.label = "ceiling light";
-    tmp.on = &switch_P801B_on;
-    tmp.off = &switch_P801B_off;
+    tmp.on = &switch_2272_on;
+    tmp.off = &switch_2272_off;
     //dev_arr[0] = tmp;
 
     //tmp.type = SOCKET_TYPE_2272;
@@ -52,10 +52,12 @@ int main(void)
 
     struct packet pkg;
 
-    pkg = (tmp.on)("0000000100");
+    pkg = (tmp.off)("0000000100");
 //                  sys  unit
 
-    printf("res: <%s>\n", pkg.data);
+    printf("count:    <%i>\n", pkg.count);
+    printf("duration: <%i>\n", pkg.duration);
+    printf("data:     <%i>\n", pkg.data);
     //printf("string: <%s>\n", str);
 
     return write(&pkg);
