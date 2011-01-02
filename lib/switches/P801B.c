@@ -27,7 +27,7 @@ char* _p801b_convert_systemcode(char* code) {
     for(i=0;code[i]!='\0';i++) {
         switch(code[i]) {
             case '0':
-                memcpy(buf+i*WORD_SIZE, "10001000", WORD_SIZE); // 0 = 1000 1000 = dip-switch is down
+                memcpy(buf+i*WORD_SIZE, "10001110", WORD_SIZE); // 0 = 1000 1110 = dip-switch is down
                 break;
             case '1':
                 memcpy(buf+i*WORD_SIZE, "11101110", WORD_SIZE); // 1 = 1110 1110 = dip-switch is up
