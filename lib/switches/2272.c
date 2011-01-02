@@ -24,15 +24,19 @@
 struct packet switch_2272_on(char system_code, char unit_code) {
     printf("switch on\n");
     struct packet pkg = {
-        .duration = 100,
-        .count = 1,
-        .data = "101",
+        .duration = 300,
+        .count = 10, // 2 seems to be enough but let's get sure
+        .data = "100100100100100100100100100100100100100110100110100110100110100100100110100",
     };
     return pkg;
 }
 
 struct packet switch_2272_off(char system_code, char unit_code) {
     printf("switch off\n");
-    struct packet pkg;
+    struct packet pkg = {
+        .duration = 300,
+        .count = 10, // 2 seems to be enough but let's get sure
+        .data = "100100100100100100100100100100100100100110100110100110100110100110100100100",
+    };
     return pkg;
 }
