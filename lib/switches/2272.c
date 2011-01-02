@@ -20,23 +20,51 @@
 //
 
 #include "2272.h"
+#define WORD_SIZE 6
 
-struct packet switch_2272_on(char system_code, char unit_code) {
-    printf("switch on\n");
+char* _2272_convert(char* code) {
+    int i, j;
+    for(i=0;code[i]!='\0';i++) {
+        //printf("<i> is: %d, code[%d]: %c\n", i, i, code[i]);
+        switch(code[i]) {
+            case '0':
+                //memcpy(buf+i*WORD_SIZE, "1000", WORD_SIZE);
+                memcpy(buf+i*WORD_SIZE, "100110", WORD_SIZE); // 0 = 100 110 = dip-switch is down
+                break;
+            case '1':
+                //memcpy(buf+i*WORD_SIZE, "1110", WORD_SIZE);
+                memcpy(buf+i*WORD_SIZE, "100100", WORD_SIZE); // 1 = 100 100 = dip-switch is up
+                break;
+            default:
+                printf("BUG!\n");
+        }
+    }
+    buf[i*WORD_SIZE] = '\0';
+    return &buf;
+}
+
+struct packet _2272_ctrl_pkg(char* code) {
+    printf("switch\n");
+    char data[DATA_MAX];
+    memcpy(data, _2272_convert(code), WORD_SIZE*10);
     struct packet pkg = {
         .duration = 300,
-        .count = 10, // 2 seems to be enough but let's get sure
-        .data = "100100100100100100100100100100100100100110100110100110100110100100100110100",
+        .count = 10,
     };
+    strcpy(pkg.data, data);
     return pkg;
 }
 
-struct packet switch_2272_off(char system_code, char unit_code) {
+struct packet switch_2272_on(char* code) {
+    printf("switch on\n");
+    struct packet pkg = _2272_ctrl_pkg(code);
+    memcpy(pkg.data+10*WORD_SIZE, "100100100110100", 15); // on => 100 100 100 110 + 100 SYNC
+    return pkg;
+}
+
+struct packet switch_2272_off(char* code) {
     printf("switch off\n");
-    struct packet pkg = {
-        .duration = 300,
-        .count = 10, // 2 seems to be enough but let's get sure
-        .data = "100100100100100100100100100100100100100110100110100110100110100110100100100",
-    };
+    struct packet pkg = _2272_ctrl_pkg(code);
+    memcpy(pkg.data+10*WORD_SIZE, "100110100100100", 15); // off => 100 110 100 100 + 100 SYNC
     return pkg;
 }
