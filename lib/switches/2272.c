@@ -39,7 +39,6 @@ char* _2272_convert(char* code) {
                 printf("BUG!\n");
         }
     }
-    buf[i*WORD_SIZE] = '\0';
     return &buf;
 }
 
@@ -47,6 +46,7 @@ struct packet _2272_ctrl_pkg(char* code) {
     printf("switch\n");
     char data[DATA_MAX];
     memcpy(data, _2272_convert(code), WORD_SIZE*10);
+    data[WORD_SIZE*10] = '\0';
     struct packet pkg = {
         .duration = 300,
         .count = 10,
