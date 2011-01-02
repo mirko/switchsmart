@@ -31,7 +31,7 @@
 #define DEVICE_NAME "rfm12"
 #define DATA_MAX 512
 
-#define GPIO_TX 1 // do not set if no GPIO should be toggled while transmitting data
+#define GPIO_TX 3 // do not set if no GPIO should be toggled while transmitting data
 
 #define SPI 1
 #define DEBUG 1
@@ -98,7 +98,6 @@ rfm12_ask_encode_tribit(int *code, int append, int byte, int cnt)
 
 int rfm12_ask_modulate(struct packet *packet)
 {
-    printk(KERN_ALERT "ptr <spi> points to: %p", spi);
     unsigned int duration = packet->duration;
     unsigned int count = packet->count;
     u8 *data = packet->data;
@@ -125,14 +124,11 @@ int rfm12_ask_modulate(struct packet *packet)
                     //and who knows what's the module doing
                     //in this case anyway...
                     //if(!on) {
-                    if(on == 0x00) {
-#ifdef GPIO_TX
-                        gpio_set_value(GPIO_TX, 1);
-#endif
-                        DBG("switch on TX\n");
+                    //if(on == 0x00) {
+                    //    DBG("switch on TX\n");
                         rfm12_tx_on();
                         on = 0x01;
-                    }
+                    //}
                     for(;us>0;us--)
                         udelay(1);
                     break;
@@ -143,14 +139,11 @@ int rfm12_ask_modulate(struct packet *packet)
                     //and who knows what's the module doing
                     //in this case anyway...
                     //if(on) {
-                    if(on == 0x01) {
-#ifdef GPIO_TX
-                        gpio_set_value(GPIO_TX, 0);
-#endif
-                        DBG("switch off TX\n");
+                    //if(on == 0x01) {
+                    //    DBG("switch off TX\n");
                         rfm12_tx_off();
                         on = 0x00;
-                    }
+                    //}
                     for(;us>0;us--)
                         udelay(1);
                     break;
@@ -202,6 +195,9 @@ static void rfm12_tx_on(void)
     //_write_spi(0x8200|(1<<5)|(1<<4)|(1<<3));
     _write_spi(0x8238);
 #endif
+#ifdef GPIO_TX
+    gpio_set_value(GPIO_TX, 0);
+#endif
 }
 
 // inline to avoid unneeded jumps
@@ -210,6 +206,9 @@ static void rfm12_tx_off(void)
 #ifdef SPI
     //_write_spi(0x8208);
     _write_spi(0x8208);
+#endif
+#ifdef GPIO_TX
+    gpio_set_value(GPIO_TX, 1);
 #endif
 }
 
@@ -362,14 +361,18 @@ int init_module(void)
     int gpio_valid = gpio_is_valid(GPIO_TX);
     if (!gpio_valid)
         return -EINVAL;
-    gpio_direction_output(GPIO_TX, 0);
+    gpio_direction_output(GPIO_TX, 1);
+    // SYNC
+    gpio_set_value(GPIO_TX, 0);
+    gpio_set_value(GPIO_TX, 1);
 #endif
 
     if (major_nr < 0) {
         DBG_FMT("Registering char device failed with %d\n", major_nr);
         return major_nr;
     }
-    DBG_FMT("device major number is: %i\n", major_nr);
+    //DBG_FMT("device major number is: %i\n", major_nr);
+    printk(KERN_INFO "device major number is: %i\n", major_nr);
 
 #ifdef SPI
     DBG("register spi driver\n");
