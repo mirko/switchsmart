@@ -24,8 +24,7 @@
 
 #include "core.h"
 
-//struct packet switch_P801B_on(char* code);
-struct packet switch_P801B_on();
+struct packet switch_P801B_on(char* code);
 struct packet switch_P801B_off(char* code);
 
 #endif
