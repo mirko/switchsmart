@@ -34,22 +34,18 @@
 #define GPIO_TX 3 // do not set if no GPIO should be toggled while transmitting data
 
 #define SPI 1
-//#define DEBUG 1
+//#define DEBUG 1 // WARNING: enabling debug may screw up timing
 
 #ifdef DEBUG
-//#  define DBG ( x ) printk (KERN_ALERT x)
 #  define DBG_FMT(fmt, ...) printk(KERN_ALERT "%d <%s> : " fmt, __LINE__, __FUNCTION__, __VA_ARGS__)
 #  define DBG(str) printk(KERN_ALERT "%d <%s> : " str, __LINE__, __FUNCTION__)
 #  define MARK() printk(KERN_ALERT "%d <%s>\n", __LINE__, __FUNCTION__)
-   //FIXME: REDUNDANT!
 #  define BUG printk(KERN_ALERT "BUG! BUG! BUG! - %d <%s>\n", __LINE__, __FUNCTION__);
 #else
 #  define DBG_FMT(fmt, ...)
 #  define DBG(str)
 #  define MARK()
 #endif
-
-int ask_2272_1527_pulse_duty_factor[4]={13,5,7,11};
 
 struct spi_device *spi;
 
@@ -60,8 +56,6 @@ struct packet {
     unsigned int count;
     u8 data[DATA_MAX]; // payload
 };
-
-//int len_body = 0; // length of payload - if no we expect a header is going to be received
 
 static int device_open(struct inode *, struct file *);
 static int device_release(struct inode *, struct file *);
@@ -77,23 +71,27 @@ static void _write_spi(u16 _word)
 #endif
 }
 
-static void rfm12_tx_on(void);
-static void rfm12_tx_off(void);
-
-void
-rfm12_ask_encode_tribit(int *code, int append, int byte, int cnt)
+// inline to avoid unneeded jumps
+static void rfm12_tx_on(void)
 {
-    int i;
-    for (i=0;i<cnt;i++)
-    {
-        if (byte & (1<<(cnt-i-1))) {
-            code[append+(i*2)]=ask_2272_1527_pulse_duty_factor[0];
-            code[append+(i*2)+1]=ask_2272_1527_pulse_duty_factor[1];
-        } else {
-            code[append+(i*2)]=ask_2272_1527_pulse_duty_factor[2];
-            code[append+(i*2)+1]=ask_2272_1527_pulse_duty_factor[3];
-        }
-    }
+#ifdef SPI
+    _write_spi(0x8238);
+#endif
+#ifdef GPIO_TX
+    gpio_set_value(GPIO_TX, 0);
+#endif
+}
+
+// inline to avoid unneeded jumps
+static void rfm12_tx_off(void)
+{
+#ifdef SPI
+    //_write_spi(0x8208);
+    _write_spi(0x8208);
+#endif
+#ifdef GPIO_TX
+    gpio_set_value(GPIO_TX, 1);
+#endif
 }
 
 int rfm12_ask_modulate(struct packet *packet)
@@ -154,8 +152,7 @@ int rfm12_ask_modulate(struct packet *packet)
         }
         //wait some time, before sending again
         //wait only if data is going to be sent more than once and there will be a further round
-        //wait 5*duration microseconds before sending again (arbitrary)
-        //TODO: untested, verify!
+        //wait 5*duration microseconds before sending again (arbitrary chosen)
         if ((packet->count > 1) && (count != 0))
             udelay(duration * 5);
         //make sure TX is powered OFF when start new round (should not happen)
@@ -171,76 +168,6 @@ int rfm12_ask_modulate(struct packet *packet)
     return 0;
 }
 
-void
-rfm12_ask_trigger(int level, int us)
-{
-    if (level)
-    {
-        _write_spi(0x8200|(1<<5)|(1<<4)|(1<<3));
-        for(;us>0;us--)
-            udelay(1);
-    }
-    else
-    {
-        _write_spi(0x8208);
-        for(;us>0;us--)
-            udelay(1);
-    }
-}
-
-// inline to avoid unneeded jumps
-static void rfm12_tx_on(void)
-{
-#ifdef SPI
-    //_write_spi(0x8200|(1<<5)|(1<<4)|(1<<3));
-    _write_spi(0x8238);
-#endif
-#ifdef GPIO_TX
-    gpio_set_value(GPIO_TX, 0);
-#endif
-}
-
-// inline to avoid unneeded jumps
-static void rfm12_tx_off(void)
-{
-#ifdef SPI
-    //_write_spi(0x8208);
-    _write_spi(0x8208);
-#endif
-#ifdef GPIO_TX
-    gpio_set_value(GPIO_TX, 1);
-#endif
-}
-
-void
-rfm12_ask_2272_send(int *command, int delay, int cnt)
-{
-    int code[49];
-
-    int i;
-    printk(KERN_ALERT "encoding\n");
-    for(i=0;i<3;i++)
-    {
-        rfm12_ask_encode_tribit(code, i*16, command[i], 8);
-    }
-    code[48]=7; //sync
-    _write_spi(0x8200|(1<<5)|(1<<4)|(1<<3));
-    printk(KERN_ALERT "??\n");
-    int ii;
-    for(ii=cnt;ii>0;ii--)                             // Sequenz cnt send
-    {
-        int rfm12_trigger_level=0;
-        int i;
-        for(i=0;i<49;i++)
-        {
-        printk(KERN_ALERT "running trigger\n");
-            rfm12_ask_trigger(rfm12_trigger_level^=1,code[i]*delay);
-        }
-        printk(KERN_ALERT "running trigger (2)\n");
-        rfm12_ask_trigger(0,24*delay);
-    }
-}
-
 #define RFM12BAND(freq)    (freq<800000?0x80D7:0x80E7)
 
 static int __devinit rfm12_probe(struct spi_device *spi_)
@@ -254,9 +181,6 @@ static int __devinit rfm12_probe(struct spi_device *spi_)
     DBG("setup spi device\n");
     spi_setup(spi);
 
-    //_write_spi(0x0000);
-    //spi_write(spi, (const u8 *)&word, 2);
-
 //    _write_spi(0x0000);
 //    MARK();
 //    spi_write(spi, (const u8 *)&word, 2);
@@ -265,7 +189,7 @@ static int __devinit rfm12_probe(struct spi_device *spi_)
 
     _write_spi(0xC0E0);
     MARK();
-    _write_spi(RFM12BAND(433920));
+    _write_spi(RFM12BAND(433920)); // 433 MHz
     MARK();
     _write_spi(0xC2AB);
     MARK();
@@ -278,12 +202,6 @@ static int __devinit rfm12_probe(struct spi_device *spi_)
     _write_spi(0xC4F7);
     MARK();
 
-    //int command[3];
-    //command[0] = 0;
-    //command[1] = 5;
-    //command[2] = 81;
-    //DBG("sending (0,5,81), 76, 10\n");
-    //rfm12_ask_2272_send(command, 76, 10);
     DBG("probe finished\n");
 
     return 0;
@@ -324,15 +242,6 @@ static ssize_t device_write(struct file *file, const char __user *buffer, size_t
     DBG_FMT("  header :: duration: %i, count: %i\n", foo.duration, foo.count);
     DBG_FMT("  payload :: as string: < %s >\n", foo.data);
 
-    // simple test, static and without any logic
-    //MARK();
-    //rfm12_tx_on();
-    //MARK();
-    //udelay(10000);
-    //MARK();
-    //rfm12_tx_off();
-    //MARK();
-
     if (rfm12_ask_modulate(&foo) < 0)
         return -EINVAL; // does not quite work...
 
@@ -365,10 +274,13 @@ int init_module(void)
     // SYNC
     gpio_set_value(GPIO_TX, 0);
     gpio_set_value(GPIO_TX, 1);
+    gpio_set_value(GPIO_TX, 0);
+    gpio_set_value(GPIO_TX, 1);
 #endif
 
     if (major_nr < 0) {
-        DBG_FMT("Registering char device failed with %d\n", major_nr);
+        //DBG_FMT("Registering char device failed with %d\n", major_nr);
+        printk(KERN_ALERT "Registering char device failed with %i\n", major_nr);
         return major_nr;
     }
     //DBG_FMT("device major number is: %i\n", major_nr);
