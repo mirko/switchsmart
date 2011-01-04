@@ -25,8 +25,8 @@
 #include <linux/spi/spi.h>
 #include <linux/fs.h>
 #include <linux/delay.h>
-#include <asm/uaccess.h>
 #include <linux/gpio.h>
+#include <asm/uaccess.h>
 
 #define DEVICE_NAME "rfm12"
 #define DATA_MAX 512
@@ -48,7 +48,7 @@
 #endif
 
 struct spi_device *spi;
-
+unsigned long flags;
 u8 word[2];
 
 struct packet {
@@ -102,6 +102,11 @@ int rfm12_ask_modulate(struct packet *packet)
     DBG_FMT("got packet:\n  duration: %i\n  count: %i\n  data: %s\n", duration, count, data);
     int i;
     u8 on;
+    // disable interrupts
+    local_irq_save(flags);
+    // disable preemption
+    preempt_disable();
+    // START this code is executed as atomic operation
     for(;count>0;count--) {
         //make sure TX is powered OFF when start new round (should not happen (see below))
         DBG("switch off TX (top)\n");
@@ -150,6 +155,11 @@ int rfm12_ask_modulate(struct packet *packet)
                     return -EINVAL;
             }
         }
+        // END this code is executed as atomic operation
+        // re-enable interrupts
+        local_irq_restore(flags);
+        // re-enable preemption
+        preempt_enable();
         //wait some time, before sending again
         //wait only if data is going to be sent more than once and there will be a further round
         //wait 5*duration microseconds before sending again (arbitrary chosen)
@@ -290,6 +300,7 @@ int init_module(void)
     DBG("register spi driver\n");
     return spi_register_driver(&rfm12_driver);
 #endif
+
     return 0;
 }
 
