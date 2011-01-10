@@ -1,0 +1,11 @@
+
+int     : id
+int     : state
+int     : product
+char*   : label
+char*   : code
+* char* : category
+* int   : min
+* int   : max
+
+*planned to be used later
