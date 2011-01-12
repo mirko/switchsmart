@@ -21,11 +21,12 @@
 
 NAME = librfm12.so
 
+INIPARSER = iniparser/dictionary.o iniparser/iniparser.o
 SWITCHES = switches/2272.o switches/P801B.o
 
 ###
 
-OBJS += core.o $(SWITCHES)
+OBJS += core.o $(INIPARSER) $(SWITCHES)
 
 CFLAGS += -fPIC
 LIBS += -shared
@@ -33,7 +34,7 @@ LIBS += -shared
 all: $(NAME)
 
 clean:
-	rm -f $(OBJS) $(SWITCHES) $(NAME)
+	rm -f $(OBJS) $(NAME)
 
 $(NAME): $(OBJS)
 	$(CC) -shared $(LDFLAGS) -o $@ $^ $(LDLIBS)
