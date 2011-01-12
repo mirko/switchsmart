@@ -21,19 +21,25 @@
 
 #include "core.h"
 #include "iniparser/iniparser.h"
+#include "iniparser/dictionary.h"
 
 #define CONFIG_PATH "/etc/rfm12.cfg"
 //#define CONFIG_PATH_ALTERNATE ""
 
 char err_msg[512];
 
+struct device dev_arr[32]; //FIXME
+dictionary* dev_dict;
+
 void err(char* msg) {
     fprintf(stderr, "ERROR: %s\n -> EXITING...\n", msg);
     exit(23);
 }
 
-int create_objs_by_cfg(struct device* dev_arr) {
+int create_objs_by_cfg() {
     dictionary* cfg = iniparser_load(CONFIG_PATH);
+    dev_dict = dictionary_new(0);
+
     if (!cfg) {
         sprintf(err_msg, "can not access config file %s", CONFIG_PATH);
         err(err_msg);
@@ -50,6 +56,8 @@ int create_objs_by_cfg(struct device* dev_arr) {
     char* product;
 
     int section__len;
+
+    struct device* xxx;
 
     // the iniparser does not allow us to iterate over sections but just calling them by name -
     // workarounding that is hacky - however actually I don't care since it keeps the bins small
@@ -97,16 +105,24 @@ int create_objs_by_cfg(struct device* dev_arr) {
         printf("  label:   %s\n", dev_arr[i].label);
         printf("  product: %s\n", product);
         printf("  code:    %s\n", dev_arr[i].code);
+
+        printf("put into dict: %s\n", dev_arr[i].id);
+        dictionary_set(dev_dict, dev_arr[i].id, (char *)&dev_arr[i], 0);
     }
 
     // // sections count should represent the count of confnigured devices from now on
     // if iniparser_find_entry("general")
     //     sections_count--;
+    //
 
-    return 0;
+    return sections_count;
 }
 
-int send(struct packet *_packet) {
+struct device* lookup_device(char* id) {
+    return dictionary_get(dev_dict, id, NULL);
+}
+
+int pkg_send(struct packet *_packet) {
     FILE *fd = fopen(DEVICE_NAME, "w");
     size_t res;
 

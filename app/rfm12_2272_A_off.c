@@ -60,5 +60,5 @@ int main(void)
     printf("data:     <%i>\n", pkg.data);
     //printf("string: <%s>\n", str);
 
-    return send(&pkg);
+    return pkg_send(&pkg);
 }

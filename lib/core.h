@@ -58,6 +58,8 @@ struct device {
     struct packet (*off)(char* code);
 };
 
-// int send(struct packet _pkg)
+struct device* lookup_device(char* id);
+
+int pkg_send(struct packet *_packet);
 
 #endif
