@@ -18,8 +18,7 @@
 #include "iniparser.h"
 
 /*---------------------------- Defines -------------------------------------*/
-#define ASCIILINESZ         (1024)
-#define INI_INVALID_KEY     ((char*)-1)
+// !! DEFINES MOVED TO HEADERFILE !!
 
 /*---------------------------------------------------------------------------
                         Private to this module
