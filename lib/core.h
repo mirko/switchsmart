@@ -62,4 +62,7 @@ struct device* lookup_device(char* id);
 
 int pkg_send(struct packet *_packet);
 
+void fatal(char* msg);
+void err(char* msg);
+
 #endif

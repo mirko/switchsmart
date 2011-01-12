@@ -31,9 +31,13 @@ char err_msg[512];
 struct device dev_arr[32]; //FIXME
 dictionary* dev_dict;
 
-void err(char* msg) {
+void fatal(char* msg) {
     fprintf(stderr, "ERROR: %s\n -> EXITING...\n", msg);
     exit(23);
+}
+
+void err(char* msg) {
+    fprintf(stderr, "ERROR: %s\n", msg);
 }
 
 int create_objs_by_cfg() {
@@ -42,7 +46,7 @@ int create_objs_by_cfg() {
 
     if (!cfg) {
         sprintf(err_msg, "can not access config file %s", CONFIG_PATH);
-        err(err_msg);
+        fatal(err_msg);
     }
 
     int i = 0;
@@ -76,17 +80,17 @@ int create_objs_by_cfg() {
         strcpy(_buf+section__len+1, "label");
         label   = iniparser_getstring(cfg, _buf, NULL);
         if(!label)
-            err("<label> is not set in config file");
+            fatal("<label> is not set in config file");
 
         strcpy(_buf+section__len+1, "code");
         code    = iniparser_getstring(cfg, _buf, NULL);
         if(!code)
-            err("<code> is not set in config file");
+            fatal("<code> is not set in config file");
 
         strcpy(_buf+section__len+1, "product");
         product = iniparser_getstring(cfg, _buf, NULL);
         if(!product)
-            err("<product> is not set in config file");
+            fatal("<product> is not set in config file");
 
         dev_arr[i].label = label;
         dev_arr[i].code = code;
@@ -119,6 +123,8 @@ int create_objs_by_cfg() {
 }
 
 struct device* lookup_device(char* id) {
+    if (!dev_dict)
+        fatal("configuration not initialized but accessed");
     return dictionary_get(dev_dict, id, NULL);
 }
 
