@@ -52,13 +52,12 @@ struct device {
     char* id;
     char* label;
     char* category;
-    int state; // MIN_INT = not available
-    //union {
-    //    struct on_off_10bit;
-    //} control;
-    //struct switches*    control;
+    int state; // MIN_INT = device (currently) not available
+    char* code;
     struct packet (*on)(char* code);
     struct packet (*off)(char* code);
 };
+
+int send(struct packet _pkg)
 
 #endif
