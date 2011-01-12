@@ -4,6 +4,21 @@
 
 #include "../lib/core.h"
 
+xmlrpc_value * id;
+xmlrpc_int ret;
+struct device* ptr;
+struct packet pkg;
+
+int _lookup_device(xmlrpc_value* val) {
+    ptr = lookup_device((char *)val);
+    if (!ptr) {
+        err("device lookup failed - requested device is not configured");
+        ret = 0;
+        return 0;
+    }
+    return 1;
+}
+
 static xmlrpc_value* on(
     xmlrpc_env *   const envP,
     xmlrpc_value * const paramArrayP,
@@ -11,21 +26,11 @@ static xmlrpc_value* on(
     void *         const channelInfo
     ) {
 
-    xmlrpc_value * id;
-    xmlrpc_int ret = 0;
-    struct device* ptr;
-    struct packet pkg;
-
     xmlrpc_decompose_value(envP, paramArrayP, "(s)", &id);
     if (envP->fault_occurred)
         return NULL;
 
-    ptr = lookup_device((char *)id);
-    if (!ptr) {
-        ret = 0;
-        err("lookup failed");
-    }
-    else {
+    if(_lookup_device(id)) {
         pkg = (ptr->on)(ptr->code);
         ret = pkg_send(&pkg);
     }
@@ -41,27 +46,14 @@ static xmlrpc_value* off(
     void *         const channelInfo
     ) {
 
-    xmlrpc_value * id;
-    xmlrpc_int ret;
-    struct device* ptr;
-    struct packet pkg;
-
     xmlrpc_decompose_value(envP, paramArrayP, "(s)", &id);
     if (envP->fault_occurred)
         return NULL;
 
-    ptr = lookup_device((char *)id);
-    if (!ptr) {
-        ret = 0;
-        err("lookup failed");
-    }
-    else {
-        pkg = (ptr->on)(ptr->code);
+    if(_lookup_device(id)) {
+        pkg = (ptr->off)(ptr->code);
         ret = pkg_send(&pkg);
     }
-
-    pkg = (ptr->on)(ptr->code);
-    ret = pkg_send(&pkg);
 
     /* Return our result. */
     return xmlrpc_build_value(envP, "i", ret);
