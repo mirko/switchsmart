@@ -19,6 +19,8 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <string.h>
+
 #include "2272.h"
 #define WORD_SIZE 6
 
@@ -37,7 +39,7 @@ char* _2272_convert(char* code) {
                 printf("BUG!\n");
         }
     }
-    return &buf;
+    return (char *)&buf;
 }
 
 struct packet _2272_ctrl_pkg(char* code) {
