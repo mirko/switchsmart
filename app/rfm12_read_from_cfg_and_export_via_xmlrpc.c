@@ -12,7 +12,7 @@ static xmlrpc_value* on(
     ) {
 
     xmlrpc_value * id;
-    xmlrpc_int ret = -1;
+    xmlrpc_int ret = 0;
     struct device* ptr;
     struct packet pkg;
 
@@ -21,11 +21,14 @@ static xmlrpc_value* on(
         return NULL;
 
     ptr = lookup_device((char *)id);
-    if (!ptr)
+    if (!ptr) {
+        ret = 0;
         err("lookup failed");
-
-    pkg = (ptr->on)(ptr->code);
-    ret = pkg_send(&pkg);
+    }
+    else {
+        pkg = (ptr->on)(ptr->code);
+        ret = pkg_send(&pkg);
+    }
 
     /* Return our result. */
     return xmlrpc_build_value(envP, "i", ret);
@@ -39,7 +42,7 @@ static xmlrpc_value* off(
     ) {
 
     xmlrpc_value * id;
-    xmlrpc_int ret = -1;
+    xmlrpc_int ret;
     struct device* ptr;
     struct packet pkg;
 
@@ -48,8 +51,14 @@ static xmlrpc_value* off(
         return NULL;
 
     ptr = lookup_device((char *)id);
-    if (!ptr)
+    if (!ptr) {
+        ret = 0;
         err("lookup failed");
+    }
+    else {
+        pkg = (ptr->on)(ptr->code);
+        ret = pkg_send(&pkg);
+    }
 
     pkg = (ptr->on)(ptr->code);
     ret = pkg_send(&pkg);
