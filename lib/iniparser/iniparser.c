@@ -423,7 +423,7 @@ int iniparser_find_entry(
 /*--------------------------------------------------------------------------*/
 int iniparser_set(dictionary * ini, char * entry, char * val)
 {
-    return dictionary_set(ini, strlwc(entry), val) ;
+    return dictionary_set(ini, strlwc(entry), val, 1) ;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -592,12 +592,12 @@ dictionary * iniparser_load(const char * ininame)
             break ;
 
             case LINE_SECTION:
-            errs = dictionary_set(dict, section, NULL);
+            errs = dictionary_set(dict, section, NULL, 1);
             break ;
 
             case LINE_VALUE:
             sprintf(tmp, "%s:%s", section, key);
-            errs = dictionary_set(dict, tmp, val) ;
+            errs = dictionary_set(dict, tmp, val, 1) ;
             break ;
 
             case LINE_ERROR:

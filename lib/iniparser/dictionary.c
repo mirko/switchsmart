@@ -224,7 +224,7 @@ char * dictionary_get(dictionary * d, char * key, char * def)
   This function returns non-zero in case of failure.
  */
 /*--------------------------------------------------------------------------*/
-int dictionary_set(dictionary * d, char * key, char * val)
+int dictionary_set(dictionary * d, char * key, char * val, int copy)
 {
 	int			i ;
 	unsigned	hash ;
@@ -243,7 +243,12 @@ int dictionary_set(dictionary * d, char * key, char * val)
 					/* Found a value: modify and return */
 					if (d->val[i]!=NULL)
 						free(d->val[i]);
-                    d->val[i] = val ? xstrdup(val) : NULL ;
+                    if (copy) {
+                        d->val[i] = val ? xstrdup(val) : NULL ;
+                    } else {
+                        // DO NOT COPY OVER DATA BUT USE THE ORIGINAL POINTER
+                        d->val[i] = val;
+                    }
                     /* Value has been modified: return */
 					return 0 ;
 				}
@@ -274,8 +279,14 @@ int dictionary_set(dictionary * d, char * key, char * val)
         }
     }
 	/* Copy key */
-	d->key[i]  = xstrdup(key);
-    d->val[i]  = val ? xstrdup(val) : NULL ;
+    if (copy) {
+	    d->key[i]  = xstrdup(key);
+        d->val[i]  = val ? xstrdup(val) : NULL ;
+    } else {
+        // DO NOT COPY OVER DATA BUT USE THE ORIGINAL POINTER
+	    d->key[i]  = key;
+        d->val[i] = val;
+    }
 	d->hash[i] = hash;
 	d->n ++ ;
 	return 0 ;
