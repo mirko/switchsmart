@@ -56,6 +56,7 @@ struct packet _2272_ctrl_pkg(char* code) {
 }
 
 struct packet switch_2272_on(char* code) {
+    //TODO: check length of code
     printf("switch on\n");
     struct packet pkg = _2272_ctrl_pkg(code);
     memcpy(pkg.data+10*WORD_SIZE, "100100100110100", 15); // on => 100 100 100 110 + 100 SYNC
@@ -63,6 +64,7 @@ struct packet switch_2272_on(char* code) {
 }
 
 struct packet switch_2272_off(char* code) {
+    //TODO: check length of code
     printf("switch off\n");
     struct packet pkg = _2272_ctrl_pkg(code);
     memcpy(pkg.data+10*WORD_SIZE, "100110100100100", 15); // off => 100 110 100 100 + 100 SYNC

@@ -73,6 +73,7 @@ struct packet _p801b_ctrl_pkg(char* code) {
 }
 
 struct packet switch_P801B_on(char* code) {
+    //TODO: check length of code
     printf("switch on\n");
     struct packet pkg = _p801b_ctrl_pkg(code);
     memcpy(pkg.data+10*WORD_SIZE, "10001110100010001000", 5*WORD_SIZE); // on => 1000 1110 1000 1000, sync => 1000
@@ -80,6 +81,7 @@ struct packet switch_P801B_on(char* code) {
 }
 
 struct packet switch_P801B_off(char* code) {
+    //TODO: check length of code
     printf("switch off\n");
     struct packet pkg = _p801b_ctrl_pkg(code);
     memcpy(pkg.data+10*WORD_SIZE, "10001000100011101000", 5*WORD_SIZE); // off => 1000 1000 1000 1110, sync => 1000
