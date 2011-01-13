@@ -26,6 +26,7 @@
 #include <stdio.h>
 
 #include "switches/core.h"
+#include "iniparser/dictionary.h"
 
 #define DEVICE_NAME "/dev/rfm12"
 
@@ -58,10 +59,11 @@ struct device {
     struct packet (*off)(char* code);
 };
 
+struct device* dev_arr;
+dictionary* dev_dict;
+
 struct device* lookup_device(char* id);
-
 int pkg_send(struct packet *_packet);
-
 void fatal(char* msg);
 void err(char* msg);
 

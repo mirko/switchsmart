@@ -21,15 +21,11 @@
 
 #include "core.h"
 #include "iniparser/iniparser.h"
-#include "iniparser/dictionary.h"
 
 #define CONFIG_PATH "/etc/rfm12.cfg"
 //#define CONFIG_PATH_ALTERNATE ""
 
 char err_msg[512];
-
-struct device dev_arr[32]; //FIXME
-dictionary* dev_dict;
 
 void fatal(char* msg) {
     fprintf(stderr, "ERROR: %s\n -> EXITING...\n", msg);
@@ -52,6 +48,10 @@ int create_objs_by_cfg() {
     int i = 0;
 
     int sections_count = iniparser_getnsec(cfg);
+
+    // allocate memory for array containing (to be) configured devices
+    dev_arr = malloc(sizeof(struct device)*sections_count);
+
     char _buf[ASCIILINESZ*2+1];
 
     char* section;
