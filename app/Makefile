@@ -29,7 +29,7 @@ all:
 	$(CC) $(CFLAGS) $(LDFLAGS) rfm12_P801B_A_on.c -o rfm12_P801B_A_on
 	$(CC) $(CFLAGS) $(LDFLAGS) rfm12_P801B_A_off.c -o rfm12_P801B_A_off
 
-	$(CC) $(CFLAGS) $(LDFLAGS) rfm12_read_from_cfg_and_export_via_xmlrpc.c -o rfm12_read_from_cfg_and_export_via_xmlrpc -lxmlrpc_server_abyss
+	$(CC) $(CFLAGS) $(LDFLAGS) rfm12_read_from_cfg_and_export_via_xmlrpc.c -o rfm12_read_from_cfg_and_export_via_xmlrpc $$(xmlrpc-c-config abyss-server --libs)
 
 clean:
 	rm -f rfm12_2272_A_on rfm12_2272_A_off
