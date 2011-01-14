@@ -20,8 +20,115 @@
 //
 
 #include "core.h"
+#include "iniparser/iniparser.h"
 
-int write(struct packet *_packet) {
+#define CONFIG_PATH "/etc/rfm12.cfg"
+//#define CONFIG_PATH_ALTERNATE ""
+
+char err_msg[512];
+
+void fatal(char* msg) {
+    fprintf(stderr, "ERROR: %s\n -> EXITING...\n", msg);
+    exit(23);
+}
+
+void err(char* msg) {
+    fprintf(stderr, "ERROR: %s\n", msg);
+}
+
+int create_objs_by_cfg() {
+    dictionary* cfg = iniparser_load(CONFIG_PATH);
+    dev_dict = dictionary_new(0);
+
+    if (!cfg) {
+        sprintf(err_msg, "can not access config file %s", CONFIG_PATH);
+        fatal(err_msg);
+    }
+
+    int i = 0;
+
+    int sections_count = iniparser_getnsec(cfg);
+
+    // allocate memory for array containing (to be) configured devices
+    dev_arr = malloc(sizeof(struct device)*sections_count);
+
+    char _buf[ASCIILINESZ*2+1];
+
+    char* section;
+    char* label;
+    char* code;
+    char* product;
+
+    int section__len;
+
+    struct device* xxx;
+
+    // the iniparser does not allow us to iterate over sections but just calling them by name -
+    // workarounding that is hacky - however actually I don't care since it keeps the bins small
+    // and is called just once at startup
+    for (;i<sections_count;i++) {
+        section = iniparser_getsecname(cfg, i);
+        printf("reading section: %s\n", section);
+
+        dev_arr[i].id = section;
+
+        section__len = strlen(section);
+
+        strcpy(_buf, section);
+        _buf[section__len] = ':';
+
+        strcpy(_buf+section__len+1, "label");
+        label   = iniparser_getstring(cfg, _buf, NULL);
+        if(!label)
+            fatal("<label> is not set in config file");
+
+        strcpy(_buf+section__len+1, "code");
+        code    = iniparser_getstring(cfg, _buf, NULL);
+        if(!code)
+            fatal("<code> is not set in config file");
+
+        strcpy(_buf+section__len+1, "product");
+        product = iniparser_getstring(cfg, _buf, NULL);
+        if(!product)
+            fatal("<product> is not set in config file");
+
+        dev_arr[i].label = label;
+        dev_arr[i].code = code;
+
+        // creating function pointers pointing to appropriate switch functions
+        // would be using (s)scanf here a better solution?
+        if(!strcmp(product, "P801B"))
+            dev_arr[i].on = &switch_P801B_on;
+            dev_arr[i].off = &switch_P801B_off;
+        if(!strcmp(product, "2272"))
+            dev_arr[i].on = &switch_2272_on;
+            dev_arr[i].off = &switch_2272_off;
+
+        printf("created object:\n");
+        printf("  id:      %s\n", dev_arr[i].id);
+        printf("  label:   %s\n", dev_arr[i].label);
+        printf("  product: %s\n", product);
+        printf("  code:    %s\n", dev_arr[i].code);
+
+        printf("put into dict: %s\n", dev_arr[i].id);
+        dictionary_set(dev_dict, dev_arr[i].id, (char *)&dev_arr[i], 0);
+    }
+
+    // // sections count should represent the count of confnigured devices from now on
+    // if iniparser_find_entry("general")
+    //     sections_count--;
+    //
+
+    return sections_count;
+}
+
+struct device* lookup_device(char* id) {
+    if (!dev_dict)
+        fatal("configuration not initialized but accessed");
+    return dictionary_get(dev_dict, id, NULL);
+}
+
+int pkg_send(struct packet *_packet) {
     FILE *fd = fopen(DEVICE_NAME, "w");
     size_t res;
 

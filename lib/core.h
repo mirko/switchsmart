@@ -26,6 +26,7 @@
 #include <stdio.h>
 
 #include "switches/core.h"
+#include "iniparser/dictionary.h"
 
 #define DEVICE_NAME "/dev/rfm12"
 
@@ -52,13 +53,18 @@ struct device {
     char* id;
     char* label;
     char* category;
-    int state; // MIN_INT = not available
-    //union {
-    //    struct on_off_10bit;
-    //} control;
-    //struct switches*    control;
+    int state; // MIN_INT = device (currently) not available
+    char* code;
     struct packet (*on)(char* code);
     struct packet (*off)(char* code);
 };
+
+struct device* dev_arr;
+dictionary* dev_dict;
+
+struct device* lookup_device(char* id);
+int pkg_send(struct packet *_packet);
+void fatal(char* msg);
+void err(char* msg);
 
 #endif

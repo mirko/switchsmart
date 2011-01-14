@@ -19,6 +19,8 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
+#include <string.h>
+
 #include "2272.h"
 #define WORD_SIZE 6
 
@@ -37,7 +39,7 @@ char* _2272_convert(char* code) {
                 printf("BUG!\n");
         }
     }
-    return &buf;
+    return (char *)&buf;
 }
 
 struct packet _2272_ctrl_pkg(char* code) {
@@ -54,6 +56,7 @@ struct packet _2272_ctrl_pkg(char* code) {
 }
 
 struct packet switch_2272_on(char* code) {
+    //TODO: check length of code
     printf("switch on\n");
     struct packet pkg = _2272_ctrl_pkg(code);
     memcpy(pkg.data+10*WORD_SIZE, "100100100110100", 15); // on => 100 100 100 110 + 100 SYNC
@@ -61,6 +64,7 @@ struct packet switch_2272_on(char* code) {
 }
 
 struct packet switch_2272_off(char* code) {
+    //TODO: check length of code
     printf("switch off\n");
     struct packet pkg = _2272_ctrl_pkg(code);
     memcpy(pkg.data+10*WORD_SIZE, "100110100100100", 15); // off => 100 110 100 100 + 100 SYNC
