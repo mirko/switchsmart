@@ -31,14 +31,14 @@ The configuration is stored in a config file, structured like this:
     category = "living room" // just for view, arbitrary
     label = "ceiling light" // just for view, arbitraty
 //    type = SOCKET // type of radio device (defines e.g. type of UI widget (button, slider, etc.))
-    type = 2272
+    product = 2272
     code = "00000 00001"
 
 [dimmer_living]
     category = "bathroom"
     label = "mirror ball" // yes, I do have a mirror ball in my bathroom, about 40 to be precise :)
 //    type = DIMMER
-    type = 1527
+    product = 1527
     code = "00000000000000000000 00001"
 
 Applications shall be able to connect via network via XML-RPC / JSON-RPC.
