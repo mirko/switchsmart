@@ -23,16 +23,14 @@ all: mod_compile lib_compile app_compile
 
 clean: mod_clean lib_clean app_clean
 
-CFLAGS += -Wall
-
 mod_compile:
-	cd kernel && CFLAGS="$(CFLAGS)" make
+	cd kernel && make
 
 lib_compile:
-	cd lib && CFLAGS="$(CFLAGS)" make
+	cd lib && make
 
 app_compile: lib_compile
-	cd app && CFLAGS="$(CFLAGS)" make
+	cd app && make
 
 mod_clean:
 	cd kernel && make clean
