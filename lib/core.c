@@ -123,7 +123,7 @@ int create_objs_by_cfg() {
 struct device* lookup_device(char* id) {
     if (!dev_dict)
         fatal("configuration not initialized but accessed");
-    return dictionary_get(dev_dict, id, NULL);
+    return (struct device*)dictionary_get(dev_dict, id, NULL);
 }
 
 int pkg_send(struct packet *_packet) {
