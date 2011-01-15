@@ -25,7 +25,7 @@
 #define WORD_SIZE 8
 
 char* _p801b_convert_systemcode(char* code) {
-    int i, j;
+    int i;
     for(i=0;code[i]!='\0';i++) {
         switch(code[i]) {
             case '0':
@@ -42,7 +42,7 @@ char* _p801b_convert_systemcode(char* code) {
 }
 
 char* _p801b_convert_unitcode(char* code) {
-    int i, j;
+    int i;
     for(i=0;code[i]!='\0';i++) {
         switch(code[i]) {
             case '0':

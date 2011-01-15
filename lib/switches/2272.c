@@ -25,7 +25,7 @@
 #define WORD_SIZE 6
 
 char* _2272_convert(char* code) {
-    int i, j;
+    int i;
     for(i=0;code[i]!='\0';i++) {
         //printf("<i> is: %d, code[%d]: %c\n", i, i, code[i]);
         switch(code[i]) {
