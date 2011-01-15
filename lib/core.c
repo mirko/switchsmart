@@ -61,8 +61,6 @@ int create_objs_by_cfg() {
 
     int section__len;
 
-    struct device* xxx;
-
     // the iniparser does not allow us to iterate over sections but just calling them by name -
     // workarounding that is hacky - however actually I don't care since it keeps the bins small
     // and is called just once at startup
