@@ -61,8 +61,6 @@ int create_objs_by_cfg() {
 
     int section__len;
 
-    struct device* xxx;
-
     // the iniparser does not allow us to iterate over sections but just calling them by name -
     // workarounding that is hacky - however actually I don't care since it keeps the bins small
     // and is called just once at startup
@@ -125,7 +123,7 @@ int create_objs_by_cfg() {
 struct device* lookup_device(char* id) {
     if (!dev_dict)
         fatal("configuration not initialized but accessed");
-    return dictionary_get(dev_dict, id, NULL);
+    return (struct device*)dictionary_get(dev_dict, id, NULL);
 }
 
 int pkg_send(struct packet *_packet) {
@@ -141,9 +139,10 @@ int pkg_send(struct packet *_packet) {
         printf("can not open device: %s\n", DEVICE_NAME);
         return EXIT_FAILURE;
     }
-    if (res = fwrite(_packet, 1, sizeof(*_packet), fd) != sizeof(*_packet))
+    if ((res = fwrite(_packet, 1, sizeof(*_packet), fd)) != (sizeof(*_packet))) {
         printf("couldn't write full packet of %lu Bytes but only %lu Bytes\n", sizeof(*_packet), res);
         return EXIT_FAILURE;
+    }
     fclose(fd);
     return 0;
 }

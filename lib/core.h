@@ -62,6 +62,7 @@ struct device {
 struct device* dev_arr;
 dictionary* dev_dict;
 
+int create_objs_by_cfg(void);
 struct device* lookup_device(char* id);
 int pkg_send(struct packet *_packet);
 void fatal(char* msg);
