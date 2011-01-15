@@ -28,7 +28,7 @@ SWITCHES = switches/2272.o switches/P801B.o
 
 OBJS += core.o $(INIPARSER) $(SWITCHES)
 
-CFLAGS += -fPIC
+CFLAGS += -fPIC -Wall
 LIBS += -shared
 
 all: $(NAME)
