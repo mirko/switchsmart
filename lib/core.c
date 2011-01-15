@@ -139,7 +139,7 @@ int pkg_send(struct packet *_packet) {
         printf("can not open device: %s\n", DEVICE_NAME);
         return EXIT_FAILURE;
     }
-    if (res = fwrite(_packet, 1, sizeof(*_packet), fd) != sizeof(*_packet)) {
+    if ((res = fwrite(_packet, 1, sizeof(*_packet), fd)) != (sizeof(*_packet))) {
         printf("couldn't write full packet of %lu Bytes but only %lu Bytes\n", sizeof(*_packet), res);
         return EXIT_FAILURE;
     }
