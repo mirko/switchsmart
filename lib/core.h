@@ -46,9 +46,11 @@
 // define delay in microsends which is caused by SPI transfer
 #ifndef SPI_TRANSFER_TIME
   #ifdef BRCM47XX
+    #pragma message("using SPI_TRANSFER_TIME defined for BRCM47XX platform")
     #define SPI_TRANSFER_TIME 200 // value for Netgear WGT634U - SPI via GPIOs / bitbanging
-  #elif NATIVE_SPI
-    #define SPI_TRANSFER_TIME 0 // if using an native SPI bus transfer time might be able to neglect - TODO: verify
+  #else
+    #pragma message("do not take SPI transfer time into account")
+    #define SPI_TRANSFER_TIME 0 // do not take any delay caused by an SPI transfer into account
   #endif
 #endif
 
