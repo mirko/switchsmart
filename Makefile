@@ -19,24 +19,26 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 
+EXTRA_CFLAGS += -Wall
+
 all: mod_compile lib_compile app_compile
 
 clean: mod_clean lib_clean app_clean
 
 mod_compile:
-	cd kernel && make
+	$(MAKE) -C kernel
 
 lib_compile:
-	cd lib && make
+	$(MAKE) -C lib
 
 app_compile: lib_compile
-	cd app && make
+	$(MAKE) -C app
 
 mod_clean:
-	cd kernel && make clean
+	$(MAKE) clean -C kernel
 
 lib_clean:
-	cd lib && make clean
+	$(MAKE) clean -C lib
 
 app_clean:
-	cd app && make clean
+	$(MAKE) clean -C app
