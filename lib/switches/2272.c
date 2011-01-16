@@ -48,7 +48,7 @@ struct packet _2272_ctrl_pkg(char* code) {
     memcpy(data, _2272_convert(code), WORD_SIZE*10);
     data[WORD_SIZE*10] = '\0';
     struct packet pkg = {
-        .duration = 500 - TRANS_DELAY,
+        .duration = 500 - SPI_TRANSFER_TIME,
         .count = 10,
     };
     strcpy(pkg.data, data);

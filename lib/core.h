@@ -33,8 +33,24 @@
 // if changing, do not forget to change the associated within the kernel module as well
 #define DATA_MAX 512
 
-// define delay in microsends which is caused by the SPI transfer and therewith board specific - the actual specified TX duration is reduced by this value
-#define TRANS_DELAY 200 // value for Netgear WGT634U - SPI via GPIOs / bitbanging
+
+/* Since we're operating timing critical and need precision of hundreds of microseconds,
+ * we can not just neglect the time an 16bit SPI transfer to the rfm12 module needs.
+ * Because SPI might can be implemented in different ways (e.g. via GPIOs or native)
+ * and used operational clock ix not fixed either, this constant is platform specific.
+ * For now we're defining constants for some known and tested boards,
+ * however measuring the time a transfer needs / calculating the time from e.g.
+ * SPI_MAX_CLOCK would be much more elegant instead of having fixed values for
+ * particular boards */
+
+// define delay in microsends which is caused by SPI transfer
+#ifndef SPI_TRANSFER_TIME
+  #ifdef BRCM47XX
+    #define SPI_TRANSFER_TIME 200 // value for Netgear WGT634U - SPI via GPIOs / bitbanging
+  #elif NATIVE_SPI
+    #define SPI_TRANSFER_TIME 0 // if using an native SPI bus transfer time might be able to neglect - TODO: verify
+  #endif
+#endif
 
 char buf[DATA_MAX];
 

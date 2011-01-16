@@ -65,7 +65,7 @@ struct packet _p801b_ctrl_pkg(char* code) {
     memcpy(data+WORD_SIZE*5, _p801b_convert_unitcode(code+5), WORD_SIZE*5);
     data[WORD_SIZE*10] = '\0';
     struct packet pkg = {
-        .duration = 200 - TRANS_DELAY,
+        .duration = 200 - SPI_TRANSFER_TIME,
         .count = 20,
     };
     strcpy(pkg.data, data);
