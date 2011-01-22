@@ -95,12 +95,17 @@ int create_objs_by_cfg() {
 
         // creating function pointers pointing to appropriate switch functions
         // would be using (s)scanf here a better solution?
-        if(!strcmp(product, "P801B"))
+        if(!strcmp(product, "P801B")) {
             dev_arr[i].on = &switch_P801B_on;
             dev_arr[i].off = &switch_P801B_off;
-        if(!strcmp(product, "2272"))
+        }
+        else if(!strcmp(product, "2272")) {
             dev_arr[i].on = &switch_2272_on;
             dev_arr[i].off = &switch_2272_off;
+        }
+        else {
+            fatal("<product> set in config does not exist");
+        }
 
         printf("created object:\n");
         printf("  id:      %s\n", dev_arr[i].id);
