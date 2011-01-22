@@ -17,6 +17,7 @@ int _lookup_device(xmlrpc_value* val) {
         ret = 0;
         return 0;
     }
+    ret = 1;
     return 1;
 }
 
