@@ -48,6 +48,9 @@
   #ifdef BRCM47XX
     #pragma message("using SPI_TRANSFER_TIME defined for BRCM47XX platform")
     #define SPI_TRANSFER_TIME 200 // value for Netgear WGT634U - SPI via GPIOs / bitbanging
+  #elif INGENIC_JZ4740
+    #pragma message("using SPI_TRANSFER_TIME defined for Ingenic JZ4740 platform")
+    #define SPI_TRANSFER_TIME 100 // value for Qi LB60 / Ben NanoNote - SPI via GPIOs / bitbanging
   #else
     #pragma message("do not take SPI transfer time into account")
     #define SPI_TRANSFER_TIME 0 // do not take any delay caused by an SPI transfer into account
