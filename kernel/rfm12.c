@@ -31,7 +31,7 @@
 #define DEVICE_NAME "rfm12"
 #define DATA_MAX 512
 
-//#define GPIO_TX 3 // do not set if no GPIO should be toggled while transmitting data
+#define GPIO_TX 104 // do not set if no GPIO should be toggled while transmitting data
 
 #define SPI 1
 //#define DEBUG 1 // WARNING: enabling debug may screw up timing
@@ -278,8 +278,8 @@ int init_module(void)
 
 #ifdef GPIO_TX
     //int gpio_valid = gpio_is_valid(GPIO_TX);
-    int gpio_request = gpio_request(GPIO_TX, NULL);
-    if (!gpio_request)
+    int gpio_req = gpio_request(GPIO_TX, NULL);
+    if (gpio_req < 0)
         return -EINVAL;
     gpio_direction_output(GPIO_TX, 1);
     // SYNC
