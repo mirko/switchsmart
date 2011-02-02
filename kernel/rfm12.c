@@ -50,6 +50,7 @@
 struct spi_device *spi;
 unsigned long flags;
 u8 word[2];
+unsigned int major_nr;
 
 struct packet {
     unsigned int duration;
@@ -274,7 +275,7 @@ struct file_operations fops = {
 int init_module(void)
 {
     DBG("init module\n");
-    int major_nr = register_chrdev(0, DEVICE_NAME, &fops);
+    major_nr = register_chrdev(0, DEVICE_NAME, &fops);
 
 #ifdef GPIO_TX
     //int gpio_valid = gpio_is_valid(GPIO_TX);
@@ -290,8 +291,8 @@ int init_module(void)
 #endif
 
     if (major_nr < 0) {
-        //DBG_FMT("Registering char device failed with %d\n", major_nr);
-        printk(KERN_ALERT "Registering char device failed with %i\n", major_nr);
+        //DBG_FMT("Registering char device failed: %i\n", major_nr);
+        printk(KERN_ALERT "Registering char device failed: %i\n", major_nr);
         return major_nr;
     }
     //DBG_FMT("device major number is: %i\n", major_nr);
@@ -307,8 +308,12 @@ int init_module(void)
 
 void cleanup_module(void)
 {
+    unregister_chrdev(major_nr, DEVICE_NAME);
 #ifdef SPI
     spi_unregister_driver(&rfm12_driver);
+#endif
+#ifdef GPIO_TX
+    gpio_free(GPIO_TX);
 #endif
 }
 
