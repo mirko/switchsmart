@@ -4,10 +4,12 @@
 
 #include "../lib/core.h"
 
-xmlrpc_value * id;
+xmlrpc_value* id;
 xmlrpc_int ret;
 struct device* ptr;
 struct packet pkg;
+
+int devs_count;
 
 int _lookup_device(xmlrpc_value* val) {
     ptr = lookup_device((char *)val);
@@ -34,26 +36,44 @@ static xmlrpc_value* get_config(
     arr = xmlrpc_array_new(envP);
 
     int i = 0;
-    // determine count of configured devices / elements within array dev_arr
-    // TODO: this is quite hackish, however I don't know how to determine
-    //        amount of allocated space for dev_arr otherwise
-    int count_conf_devs = (dev_dict->size)/(sizeof (struct device));
-    for(;i<count_conf_devs;i++) {
+    for(;i<devs_count;i++) {
         structure = xmlrpc_build_value(envP,
             "{s:s,s:s,s:s,s:i}",
             "id"    , dev_arr[i].id,
             "label" , dev_arr[i].label,
             "code"  , dev_arr[i].code,
-            //"state" , dev_arr[i].state,
-            "state" , 0
+            "state" , dev_arr[i].state
         );
         xmlrpc_array_append_item(envP, arr, structure);
+        printf("added %i\n", i);
     }
 
     /* Return our result. */
     return xmlrpc_build_value(envP, "A", arr);
 }
 
+static xmlrpc_value* xmlrpc_control(
+    xmlrpc_env *   const envP,
+    xmlrpc_value * const paramArrayP,
+    void *         const serverInfo,
+    void *         const channelInfo
+    ) {
+
+    xmlrpc_int value;
+
+    xmlrpc_parse_value(envP, paramArrayP, "(si)", &id, &value);
+    if (envP->fault_occurred)
+        return NULL;
+
+    if(_lookup_device(id)) {
+        ret = control(ptr, value);
+    }
+
+    /* Return our result. */
+    return xmlrpc_build_value(envP, "i", ret);
+}
+
+//deprecated - use control() instead
 static xmlrpc_value* on(
     xmlrpc_env *   const envP,
     xmlrpc_value * const paramArrayP,
@@ -66,14 +86,15 @@ static xmlrpc_value* on(
         return NULL;
 
     if(_lookup_device(id)) {
-        pkg = (ptr->on)(ptr->code);
-        ret = pkg_send(&pkg);
+        if (!(control)(ptr, 1))
+            return NULL;
     }
 
     /* Return our result. */
     return xmlrpc_build_value(envP, "i", ret);
 }
 
+//deprecated - use control() instead
 static xmlrpc_value* off(
     xmlrpc_env *   const envP,
     xmlrpc_value * const paramArrayP,
@@ -96,13 +117,15 @@ static xmlrpc_value* off(
 
 int main(int const argc, const char ** const argv) {
 
-    create_objs_by_cfg();
+    devs_count = create_objs_by_cfg();
 
+    //deprecated - use control() instead
     struct xmlrpc_method_info3 const _on = {
         /* .methodName     = */ "on",
         /* .methodFunction = */ &on,
     };
 
+    //deprecated - use control() instead
     struct xmlrpc_method_info3 const _off = {
         /* .methodName     = */ "off",
         /* .methodFunction = */ &off,
@@ -111,6 +134,11 @@ int main(int const argc, const char ** const argv) {
     struct xmlrpc_method_info3 const _get_config = {
         /* .methodName     = */ "get_config",
         /* .methodFunction = */ &get_config,
+    };
+
+    struct xmlrpc_method_info3 const _control = {
+        /* .methodName     = */ "control",
+        /* .methodFunction = */ &xmlrpc_control,
     };
 
     xmlrpc_server_abyss_parms serverparm;
@@ -132,6 +160,7 @@ int main(int const argc, const char ** const argv) {
     xmlrpc_registry_add_method3(&env, registryP, &_on);
     xmlrpc_registry_add_method3(&env, registryP, &_off);
     xmlrpc_registry_add_method3(&env, registryP, &_get_config);
+    xmlrpc_registry_add_method3(&env, registryP, &_control);
 
     serverparm.config_file_name = NULL;
     serverparm.registryP        = registryP;
