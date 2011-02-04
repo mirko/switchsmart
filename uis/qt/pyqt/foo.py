@@ -47,26 +47,22 @@ class GUI(QtGui.QWidget):
             self.devs[i]['_'].setObjectName(str(i))
             self.devs[i]['_'].move(10, i*20+10)
             self.connect(self.devs[i]['_'], QtCore.SIGNAL('stateChanged(int)'), self.switch)
+            if dev['state'] == 1:
+                self.devs[i]['_'].setChecked(True)
             self.devs[i]['_'].show()
             i += 1
 
 
     def switch(self, value):
         if value:
-            self.xmlrpc.on(
-                self.devs[
-                    int(
-                        self.sender().objectName()
-                    )
-                ]['id']
+            self.xmlrpc.control(
+                self.devs[int(self.sender().objectName())]['id'],
+                1
             )
         else:
-            self.xmlrpc.off(
-                self.devs[
-                    int(
-                        self.sender().objectName()
-                    )
-                ]['id']
+            self.xmlrpc.control(
+                self.devs[int(self.sender().objectName())]['id'],
+                0
             )
 
 
