@@ -92,25 +92,12 @@ int create_objs_by_cfg() {
 
         dev_arr[i].label = label;
         dev_arr[i].code = code;
-
-        // creating function pointers pointing to appropriate switch functions
-        // would be using (s)scanf here a better solution?
-        if(!strcmp(product, "P801B")) {
-            dev_arr[i].on = &switch_P801B_on;
-            dev_arr[i].off = &switch_P801B_off;
-        }
-        else if(!strcmp(product, "2272")) {
-            dev_arr[i].on = &switch_2272_on;
-            dev_arr[i].off = &switch_2272_off;
-        }
-        else {
-            fatal("<product> set in config does not exist");
-        }
+        dev_arr[i].product = product;
 
         printf("created object:\n");
         printf("  id:      %s\n", dev_arr[i].id);
         printf("  label:   %s\n", dev_arr[i].label);
-        printf("  product: %s\n", product);
+        printf("  product: %s\n", dev_arr[i].product);
         printf("  code:    %s\n", dev_arr[i].code);
 
         printf("put into dict: %s\n", dev_arr[i].id);
@@ -123,6 +110,36 @@ int create_objs_by_cfg() {
     //
 
     return sections_count;
+}
+
+void* str_to_func_ptr(char* str, char func) {
+        if(!strcmp(str, "P801B")) {
+            if(!func)
+                return &switch_P801B_off;
+            else
+                return &switch_P801B_on;
+        }
+        if(!strcmp(str, "2272")) {
+            if(!func)
+                return &switch_2272_on;
+            else
+                return &switch_2272_off;
+        }
+        fatal("<product> set for this device does not exist");
+}
+
+int control(struct device* dev, int value) {
+    struct packet (*ptr)();
+    struct packet pkg;
+
+    ptr = str_to_func_ptr(dev->product, value);
+    pkg = (ptr)(dev->code);
+
+    if (pkg_send(&pkg)) {
+        dev->state = value;
+        return 1;
+    }
+    return 0;
 }
 
 struct device* lookup_device(char* id) {

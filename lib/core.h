@@ -76,8 +76,9 @@ struct device {
     char* category;
     int state; // MIN_INT = device (currently) not available
     char* code;
-    struct packet (*on)(char* code);
-    struct packet (*off)(char* code);
+    struct packet (*on)(char* code); // deprecated
+    struct packet (*off)(char* code); // deprecated
+    char* product;
 };
 
 struct device* dev_arr;
@@ -88,5 +89,6 @@ struct device* lookup_device(char* id);
 int pkg_send(struct packet *_packet);
 void fatal(char* msg);
 void err(char* msg);
+int control(struct device* dev, int value);
 
 #endif
