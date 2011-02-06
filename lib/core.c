@@ -152,10 +152,10 @@ int pkg_send(struct packet *_packet) {
     FILE *fd = fopen(DEVICE_NAME, "w");
     size_t res;
 
-    printf("duration: %u\n", _packet->duration);
-    printf("count: %u\n", _packet->count);
-    printf("data: %s\n", _packet->data);
-    printf("sizeof: %lu\n", sizeof(_packet));
+    //printf("duration: %u\n", _packet->duration);
+    //printf("count: %u\n", _packet->count);
+    //printf("data: %s\n", _packet->data);
+    //printf("sizeof: %lu\n", sizeof(_packet));
 
     if (fd == NULL) {
         printf("can not open device: %s\n", DEVICE_NAME);
