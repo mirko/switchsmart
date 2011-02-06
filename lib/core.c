@@ -166,5 +166,5 @@ int pkg_send(struct packet *_packet) {
         return EXIT_FAILURE;
     }
     fclose(fd);
-    return 0;
+    return 1;
 }
