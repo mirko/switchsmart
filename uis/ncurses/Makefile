@@ -19,11 +19,11 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 
-CFLAGS += -L../lib
+CFLAGS += -L../../lib
 LDFLAGS += -lrfm12 -lncurses
 
 all:
-	$(CC) $(CFLAGS) $(LDFLAGS) ncurses.c -o ncurses
+	$(CC) $(CFLAGS) $(LDFLAGS) rfm12ask_ncurses.c -o ncurses
 
 clean:
 	rm -f ncurses
