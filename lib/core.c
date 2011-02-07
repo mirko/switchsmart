@@ -51,6 +51,8 @@ int create_objs_by_cfg() {
 
     // allocate memory for array containing (to be) configured devices
     dev_arr = malloc(sizeof(struct device)*sections_count);
+    if(!dev_arr)
+        fatal("can not allocate memory");
 
     char _buf[ASCIILINESZ*2+1];
 
