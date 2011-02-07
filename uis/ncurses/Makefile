@@ -23,7 +23,7 @@ CFLAGS += -L../../lib
 LDFLAGS += -lrfm12 -lncurses
 
 all:
-	$(CC) $(CFLAGS) $(LDFLAGS) rfm12ask_ncurses.c -o ncurses
+	$(CC) $(CFLAGS) $(LDFLAGS) rfm12ask_ncurses.c -o rfm12ask_ncurses
 
 clean:
-	rm -f ncurses
+	rm -f rfm12ask_ncurses
