@@ -36,7 +36,7 @@ Rectangle {
         id: view
         anchors.fill: parent
 
-        model: 200
+        //model: 200
 
         focus: true
         highlightMoveDuration: 1

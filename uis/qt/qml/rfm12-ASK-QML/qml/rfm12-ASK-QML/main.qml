@@ -30,14 +30,16 @@ Rectangle {
 
     // PowerSocket list
     ScrollableList {
-        id: socketList
+        id: powerSocketList
         property int margin: 5
         anchors {
             left: mainScreen.left; leftMargin: margin;
             top: mainScreen.top; topMargin: margin;
             bottom: mainScreen.bottom; bottomMargin: margin
         }
-        width: 400;
+        width: 400
+
+        model: powerSocketModel
 
         delegate: Item {
             height: 20
@@ -47,7 +49,7 @@ Rectangle {
 
             Text {
                 font.pixelSize: 14
-                text: index
+                text: id + " / " + label + " / " + code + " / " + state
                 anchors.left: parent.left
             }
 
@@ -55,7 +57,7 @@ Rectangle {
                 anchors.fill: parent
                 onClicked: {
                     view.currentIndex = index;
-                    view.model = index + 5;
+                    /*view.model = index + 5;*/
                 }
             }
         }

@@ -20,28 +20,69 @@
 
 #include <QtGui/QApplication>
 #include <QtGui/QMessageBox>
+#include <QDeclarativeContext>
+#include <QDeclarativeItem>
+#include <QObject>
+#include <QStringListModel>
 #include "qmlapplicationviewer.h"
-//#include "../../../lib/core.h"
 
-int main(int argc, char *argv[])
+#include <xmlrpc-c/base.h>
+#include <xmlrpc-c/client.h>
+#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "helperfunctions.h"
+#include "powersocket.h"
+
+#define NAME "rfm12-ASK-for-linux-QML"
+#define VERSION "0.1"
+
+bool initializeXmlRpc(xmlrpc_env *envP)
+{
+    // initialize xmlrpc and its error-handling environment
+    xmlrpc_env_init(envP);
+    xmlrpc_client_init2(envP, XMLRPC_CLIENT_NO_FLAGS, NAME, VERSION, NULL, 0);
+    if (envP->fault_occurred)
+        return false;
+
+    return true;
+}
+
+int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
+    xmlrpc_env env;
+    //QList<PowerSocket> powerSocketList;
+    //PowerSocketListModel
+    ListModel model(new PowerSocket, qApp);
+    QString serverURL = "localhost:31337/RPC2";
+    QString methodName = "getPowerSocketArray";
+    bool xmlrpcInitialized = false;
 
     // set up QML viewer
     QmlApplicationViewer viewer;
-    viewer.setOrientation(QmlApplicationViewer::LockLandscape);
+    viewer.setOrientation(QmlApplicationViewer::ScreenOrientationLockLandscape);
     viewer.setMainQmlFile(QLatin1String("qml/rfm12-ASK-QML/main.qml"));
+    viewer.rootContext()->setContextProperty("powerSocketModel", &model);
     viewer.show();
 
-    // QXmlRpc seems to be using deprecated methods of Qt, so we're using
-    // ulxmlrpcpp(?) now
-/*    xmlrpc::Client* client = new xmlrpc::Client(this);
-    connect(client, SIGNAL(done(int, QVariant)), this, SLOT(processReturnValue(int, QVariant)));
-    connect(client, SIGNAL(failed(int, int, QString)), this, SLOT(processFault(int, int, QString)));
-    client->setHost("localhost", 80);*/
+    xmlrpcInitialized = initializeXmlRpc(&env);
 
-    // set up XML-RPC client
-    //...
+    try
+    {
+        refreshPowerSockets(&env, &model, serverURL, methodName);
+    } catch(QString& ex)
+    {
+        std::cerr << "Exception: " << (const char *)(ex.toAscii()) << std::endl;
+        //exit(1);
+    }
+
+    /*PowerSocket blub = powerSockets["SteckdoseB"];
+    blub.setLabel("Hallo");
+    std::cout << (const char *)(blub.getLabel().toAscii()) << std::endl;
+    PowerSocket blah = powerSockets["SteckdoseB"];
+    std::cout << (const char *)(blah.getLabel().toAscii()) << std::endl;*/
 
     return app.exec();
 }
