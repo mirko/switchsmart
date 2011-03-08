@@ -29,7 +29,6 @@ Rectangle {
 
     SystemPalette { id: activePalette }
 
-    color: activePalette.window
     clip: true
 
     ListView {

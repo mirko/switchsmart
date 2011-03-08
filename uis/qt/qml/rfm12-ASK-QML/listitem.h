@@ -18,33 +18,29 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-import Qt 4.7
+#ifndef LISTITEM_H
+#define LISTITEM_H
 
-Rectangle {
-    id: scrollableList
-    property alias model: view.model
-    property alias delegate: view.delegate
-    property alias currentIndex: view.currentIndex
-    property real itemHeight: 20
+#include <QObject>
+#include <QtGui/QApplication>
+#include <QVariant>
 
-    SystemPalette { id: activePalette }
+/**
+  * Abstract class for list items such as PowerSockets.
+  * These are also used by QML.
+  */
+class ListItem : public QObject
+{
+    Q_OBJECT
+public:
+    ListItem(QObject *parent = 0) : QObject(parent) { }
+    virtual ~ListItem() { }
+    virtual QString id() const = 0;
+    virtual QVariant data(int role) const = 0;
+    virtual QHash<int, QByteArray> roleNames() const = 0;
 
-    clip: true
+signals:
+    void dataChanged();
+};
 
-    ListView {
-        id: view
-        anchors.fill: parent
-
-        //model: 200
-
-        focus: true
-        highlightMoveDuration: 1
-        currentIndex: 0
-        flickDeceleration: 600
-
-        highlight: Rectangle { width: view.width; color: activePalette.highlight }
-    }
-
-    Keys.onDownPressed: view.incrementCurrentIndex()
-    Keys.onUpPressed: view.decrementCurrentIndex()
-}
+#endif // LISTITEM_H

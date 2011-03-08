@@ -35,54 +35,25 @@
 #include "helperfunctions.h"
 #include "powersocket.h"
 
-#define NAME "rfm12-ASK-for-linux-QML"
-#define VERSION "0.1"
-
-bool initializeXmlRpc(xmlrpc_env *envP)
-{
-    // initialize xmlrpc and its error-handling environment
-    xmlrpc_env_init(envP);
-    xmlrpc_client_init2(envP, XMLRPC_CLIENT_NO_FLAGS, NAME, VERSION, NULL, 0);
-    if (envP->fault_occurred)
-        return false;
-
-    return true;
-}
-
 int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
-    xmlrpc_env env;
-    //QList<PowerSocket> powerSocketList;
-    //PowerSocketListModel
-    ListModel model(new PowerSocket, qApp);
-    QString serverURL = "localhost:31337/RPC2";
-    QString methodName = "getPowerSocketArray";
+    xmlrpc_env env; // error environment
+    xmlrpc_client *clientP = NULL; // client used for RPCs
+    ListModel model(new PowerSocket, &env, &clientP, qApp); // local list of powersockets
+
     bool xmlrpcInitialized = false;
 
     // set up QML viewer
     QmlApplicationViewer viewer;
+    viewer.rootContext()->setContextProperty("powerSocketModel", &model);
     viewer.setOrientation(QmlApplicationViewer::ScreenOrientationLockLandscape);
     viewer.setMainQmlFile(QLatin1String("qml/rfm12-ASK-QML/main.qml"));
-    viewer.rootContext()->setContextProperty("powerSocketModel", &model);
     viewer.show();
 
-    xmlrpcInitialized = initializeXmlRpc(&env);
-
-    try
-    {
-        refreshPowerSockets(&env, &model, serverURL, methodName);
-    } catch(QString& ex)
-    {
-        std::cerr << "Exception: " << (const char *)(ex.toAscii()) << std::endl;
-        //exit(1);
-    }
-
-    /*PowerSocket blub = powerSockets["SteckdoseB"];
-    blub.setLabel("Hallo");
-    std::cout << (const char *)(blub.getLabel().toAscii()) << std::endl;
-    PowerSocket blah = powerSockets["SteckdoseB"];
-    std::cout << (const char *)(blah.getLabel().toAscii()) << std::endl;*/
+    // set up XML-RPC
+    xmlrpc_env_init(&env);
+    xmlrpcInitialized = initializeXmlRpc(&env, &clientP);
 
     return app.exec();
 }

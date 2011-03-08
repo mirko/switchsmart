@@ -18,33 +18,34 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-import Qt 4.7
+import QtQuick 1.0
 
 Rectangle {
-    id: scrollableList
-    property alias model: view.model
-    property alias delegate: view.delegate
-    property alias currentIndex: view.currentIndex
-    property real itemHeight: 20
+    property int tabsWidth: 64
+    property int tabIndex: 0
 
-    SystemPalette { id: activePalette }
+    anchors.fill: parent
 
-    clip: true
+    // contains the current tab view
+    Rectangle {
+        id: tabViewContainer
+        height: parent.height
 
-    ListView {
-        id: view
-        anchors.fill: parent
-
-        //model: 200
-
-        focus: true
-        highlightMoveDuration: 1
-        currentIndex: 0
-        flickDeceleration: 600
-
-        highlight: Rectangle { width: view.width; color: activePalette.highlight }
+        anchors.right: parent.right
+        anchors.left: tabBar.left
     }
 
-    Keys.onDownPressed: view.incrementCurrentIndex()
-    Keys.onUpPressed: view.decrementCurrentIndex()
+    // the tab bar
+    Rectangle {
+        id: tabBar
+
+        width: tabsWidth
+        height: parent.height
+
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+
+        //gradient?
+    }
 }

@@ -43,4 +43,5 @@ unix:!macx:!symbian: LIBS += -lxmlrpc_client
 HEADERS += \
     helperfunctions.h \
     powersocket.h \
-    listmodel.h
+    listmodel.h \
+    listitem.h

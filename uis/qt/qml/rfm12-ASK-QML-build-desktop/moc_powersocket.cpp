@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'powersocket.h'
 **
-** Created: Fri Mar 4 16:15:52 2011
+** Created: Tue Mar 8 23:25:04 2011
 **      by: The Qt Meta Object Compiler version 62 (Qt 4.7.1)
 **
 ** WARNING! All changes made in this file will be lost!
