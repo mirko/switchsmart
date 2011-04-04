@@ -20,9 +20,28 @@ symbian:TARGET.UID3 = 0xE6CB76AA
 #DEFINES += QMLOBSERVER
 
 # The .cpp file which was generated for your project. Feel free to hack it.
-SOURCES += main.cpp
+SOURCES += main.cpp \
+    helperfunctions.cpp \
+    powersocket.cpp \
+    listmodel.cpp
 
 # Please do not modify the following two lines. Required for deployment.
 include(qmlapplicationviewer/qmlapplicationviewer.pri)
 qtcAddDeployment()
 
+
+unix:!macx:!symbian: LIBS += -lxmlrpc
+
+unix:!macx:!symbian: LIBS += -lxmlrpc_xmlparse
+
+unix:!macx:!symbian: LIBS += -lxmlrpc_xmltok
+
+unix:!macx:!symbian: LIBS += -lxmlrpc_util
+
+unix:!macx:!symbian: LIBS += -lxmlrpc_client
+
+HEADERS += \
+    helperfunctions.h \
+    powersocket.h \
+    listmodel.h \
+    listitem.h

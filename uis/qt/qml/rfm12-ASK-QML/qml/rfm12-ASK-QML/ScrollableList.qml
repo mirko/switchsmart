@@ -29,14 +29,13 @@ Rectangle {
 
     SystemPalette { id: activePalette }
 
-    color: activePalette.window
     clip: true
 
     ListView {
         id: view
         anchors.fill: parent
 
-        model: 200
+        //model: 200
 
         focus: true
         highlightMoveDuration: 1

@@ -18,33 +18,35 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 
-import Qt 4.7
+import QtQuick 1.0
 
 Rectangle {
-    id: scrollableList
-    property alias model: view.model
-    property alias delegate: view.delegate
-    property alias currentIndex: view.currentIndex
-    property real itemHeight: 20
+    id: button
+
+    property alias text: text.text
+    property alias font: text.font
+    signal clicked
 
     SystemPalette { id: activePalette }
 
-    clip: true
+    height: text.height + 10
+    width: text.width + 25
+    border.width: 1
+    radius: 3
+    smooth: true
 
-    ListView {
-        id: view
-        anchors.fill: parent
+    color: mouseArea.pressed ? activePalette.dark : activePalette.button
 
-        //model: 200
-
-        focus: true
-        highlightMoveDuration: 1
-        currentIndex: 0
-        flickDeceleration: 600
-
-        highlight: Rectangle { width: view.width; color: activePalette.highlight }
+    Text {
+        id: text
+        anchors.centerIn: parent
+        font.pointSize: 9
+        color: activePalette.buttonText
     }
 
-    Keys.onDownPressed: view.incrementCurrentIndex()
-    Keys.onUpPressed: view.decrementCurrentIndex()
+    MouseArea {
+        id: mouseArea
+        anchors.fill: parent
+        onClicked: button.clicked()
+    }
 }

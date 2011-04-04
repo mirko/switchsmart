@@ -20,28 +20,40 @@
 
 #include <QtGui/QApplication>
 #include <QtGui/QMessageBox>
+#include <QDeclarativeContext>
+#include <QDeclarativeItem>
+#include <QObject>
+#include <QStringListModel>
 #include "qmlapplicationviewer.h"
-//#include "../../../lib/core.h"
 
-int main(int argc, char *argv[])
+#include <xmlrpc-c/base.h>
+#include <xmlrpc-c/client.h>
+#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "helperfunctions.h"
+#include "powersocket.h"
+
+int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
+    xmlrpc_env env; // error environment
+    xmlrpc_client *clientP = NULL; // client used for RPCs
+    ListModel model(new PowerSocket, &env, &clientP, qApp); // local list of powersockets
+
+    bool xmlrpcInitialized = false;
 
     // set up QML viewer
     QmlApplicationViewer viewer;
-    viewer.setOrientation(QmlApplicationViewer::LockLandscape);
+    viewer.rootContext()->setContextProperty("powerSocketModel", &model);
+    viewer.setOrientation(QmlApplicationViewer::ScreenOrientationLockLandscape);
     viewer.setMainQmlFile(QLatin1String("qml/rfm12-ASK-QML/main.qml"));
     viewer.show();
 
-    // QXmlRpc seems to be using deprecated methods of Qt, so we're using
-    // ulxmlrpcpp(?) now
-/*    xmlrpc::Client* client = new xmlrpc::Client(this);
-    connect(client, SIGNAL(done(int, QVariant)), this, SLOT(processReturnValue(int, QVariant)));
-    connect(client, SIGNAL(failed(int, int, QString)), this, SLOT(processFault(int, int, QString)));
-    client->setHost("localhost", 80);*/
-
-    // set up XML-RPC client
-    //...
+    // set up XML-RPC
+    xmlrpc_env_init(&env);
+    xmlrpcInitialized = initializeXmlRpc(&env, &clientP);
 
     return app.exec();
 }

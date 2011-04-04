@@ -25,39 +25,127 @@ Rectangle {
     width: 800
     height: 600
 
-
     SystemPalette { id: activePalette }
 
     // PowerSocket list
     ScrollableList {
-        id: socketList
+        id: powerSocketList
         property int margin: 5
         anchors {
-            left: mainScreen.left; leftMargin: margin;
-            top: mainScreen.top; topMargin: margin;
-            bottom: mainScreen.bottom; bottomMargin: margin
+            left: mainScreen.left; leftMargin: margin
+            top: mainScreen.top; topMargin: margin
+            bottom: settings.top//; bottomMargin: margin
+            right: mainScreen.right; rightMargin: margin
         }
-        width: 400;
+        //width: 400
+        color: activePalette.alternateBase
+
+        model: powerSocketModel
 
         delegate: Item {
-            height: 20
+            height: 50
             width: parent.width
             anchors.left: parent.left
-            anchors.leftMargin: 5
+            //anchors.leftMargin: 5
 
             Text {
-                font.pixelSize: 14
-                text: index
-                anchors.left: parent.left
+                id: labelText
+                font.pointSize: 14
+                text: label
+                color: activePalette.text
+                anchors {
+                    left: parent.left
+                    leftMargin: 5
+                    top: parent.top
+                }
+            }
+            Text {
+                id: idCodeText
+                font.pointSize: 9
+                text: id + " / " + code
+                color: activePalette.text
+                anchors {
+                    left: parent.left
+                    leftMargin: 5
+                    top: labelText.bottom
+                    topMargin: 2
+                }
+            }
+            Text {
+                id: stateText
+                font.pointSize: 12
+                text: socketState == 0 ? "Off" : "On"
+                color: activePalette.text
+                anchors {
+                    right: parent.right
+                    rightMargin: 5
+                    verticalCenter: parent.verticalCenter
+                }
+
             }
 
             MouseArea {
                 anchors.fill: parent
                 onClicked: {
                     view.currentIndex = index;
-                    view.model = index + 5;
+                    powerSocketModel.control(id, socketState == 0 ? 1 : 0);
                 }
             }
         }
     }
+
+    // settings
+    Rectangle {
+        id: settings
+        property int margin: 5
+        anchors {
+            left: mainScreen.left; leftMargin: margin
+            //top: powerSocketList.bottom
+            bottom: mainScreen.bottom//; bottomMargin: margin
+            right: mainScreen.right; rightMargin: margin
+        }
+        height: 30
+        color: activePalette.base
+
+        Rectangle {
+            id: textInputContainer
+            property alias serverAddress: addressInput.text
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.left: parent.left
+            border.width: 1
+            height: addressInput.height + 4
+            width: 300
+            radius: 2
+            smooth: true
+
+            TextInput {
+                id: addressInput
+                text: "<server address>:<port>"
+                property string previousText: "<server address>:<port>"
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.leftMargin: 5
+                anchors.rightMargin: 5
+                anchors.verticalCenter: parent.verticalCenter
+                onAccepted: refreshButton.clicked
+                onActiveFocusChanged: {
+                    if (focus) {
+                        previousText = text;
+                        text = "";
+                    }
+                    else
+                        text = previousText;
+                }
+            }
+        }
+
+        Button {
+            id: refreshButton
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.right: parent.right
+            text: "Refresh"
+            onClicked: powerSocketModel.refresh(textInputContainer.serverAddress)
+        }
+    }
+
 }
