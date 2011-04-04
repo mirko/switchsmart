@@ -1,0 +1,81 @@
+--- linux-2.6.32.27/arch/mips/jz4740/board-qi_lb60.c	2011-01-22 22:47:33.882211142 +0000
++++ linux-2.6.32.27/arch/mips/jz4740/board-qi_lb60.c.mod	2011-01-22 23:08:10.850211906 +0000
+@@ -268,6 +268,13 @@
+ 	.num_chipselect = 1,
+ };
+ 
++struct spi_gpio_platform_data spigpio_platform_data_mmc = {
++	.sck = 106, //JZ_GPIO_PORTC(10),
++	.mosi = 105, // JZ_GPIO_PORTC(9),
++	.miso = 108, //JZ_GPIO_PORTC(12),
++	.num_chipselect = 1,
++};
++
+ static struct platform_device spigpio_device = {
+ 	.name = "spi_gpio",
+ 	.id   = 1,
+@@ -276,6 +283,14 @@
+ 	},
+ };
+ 
++static struct platform_device spigpio_device_mmc = {
++	.name = "spi_gpio",
++	.id   = 2,
++	.dev = {
++		.platform_data = &spigpio_platform_data_mmc,
++	},
++};
++
+ static struct spi_board_info qi_lb60_spi_board_info[] = {
+ 	{
+ 		.modalias = "gpm940b0",
+@@ -286,6 +301,17 @@
+ 	},
+ };
+ 
++static struct spi_board_info qi_lb60_spi_board_info_mmc[] = {
++	{
++		.modalias = "rfm12",
++		.controller_data = (void*)107, // JZ_GPIO_PORTC(11),
++		.chip_select = 0,
++		.bus_num = 2,
++		//.max_speed_hz = 20 * 1000, // 20 kHz
++		.max_speed_hz = 400 * 1000, // 400 KHz
++	},
++};
++
+ /* Battery */
+ static struct jz_battery_platform_data qi_lb60_battery_pdata = {
+ 	.gpio_charge = GPIO_CHARG_STAT_N,
+@@ -356,6 +382,7 @@
+ 	&jz4740_nand_device,
+ 	&qi_lb60_keypad,
+ 	&spigpio_device,
++	&spigpio_device_mmc,
+ 	&jz4740_framebuffer_device,
+ 	&jz4740_i2s_device,
+ 	&jz4740_codec_device,
+@@ -373,6 +400,14 @@
+ 	//jz_gpio_disable_pullup(GPIO_SD_VCC_EN_N);
+ 	jz_gpio_enable_pullup(GPIO_SD_VCC_EN_N); // enable VDD of mmc slot by default
+ 	jz_gpio_disable_pullup(GPIO_SD_CD_N);
++
++    jz_gpio_set_function(JZ_GPIO_MSC_CMD, JZ_GPIO_FUNC_NONE);
++    jz_gpio_set_function(JZ_GPIO_MSC_CLK, JZ_GPIO_FUNC_NONE);
++    jz_gpio_set_function(JZ_GPIO_MSC_DATA0, JZ_GPIO_FUNC_NONE);
++    jz_gpio_set_function(JZ_GPIO_MSC_DATA1, JZ_GPIO_FUNC_NONE);
++    jz_gpio_set_function(JZ_GPIO_MSC_DATA2, JZ_GPIO_FUNC_NONE);
++    jz_gpio_set_function(JZ_GPIO_MSC_DATA3, JZ_GPIO_FUNC_NONE);
++
+ }
+ 
+ static int __init qi_lb60_init_platform_devices(void)
+@@ -384,6 +419,8 @@
+ 
+ 	spi_register_board_info(qi_lb60_spi_board_info,
+ 				ARRAY_SIZE(qi_lb60_spi_board_info));
++	spi_register_board_info(qi_lb60_spi_board_info_mmc,
++				ARRAY_SIZE(qi_lb60_spi_board_info_mmc));
+ 
+ 	return platform_add_devices(jz_platform_devices,
+ 					ARRAY_SIZE(jz_platform_devices));
