@@ -30,13 +30,7 @@ class GUI(QtGui.QWidget):
             self.xmlrpc = ServerProxy(str(text))
             self.devs = self.xmlrpc.get_config()
         except:
-            msg_box = QtGui.QMessageBox(
-            QtGui.QMessageBox.Warning,
-            'Warning',
-            'Fetching data from host failed',
-            QtGui.QMessageBox.Ok,
-            self)
-            msg_box.exec_()
+            msg_box = QtGui.QMessageBox(QtGui.QMessageBox.Warning, 'Warning', 'Fetching data from host failed', QtGui.QMessageBox.Ok, self).exec_()
             return False
 
         self.button.hide()
