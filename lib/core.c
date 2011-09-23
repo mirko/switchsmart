@@ -210,13 +210,13 @@ int init() {
 
 void* str_to_func_ptr(char* str, char func) {
         if(!strcmp(str, "P801B")) {
-            if(!func)
-                return &switch_P801B_off;
-            else
+            if(func)
                 return &switch_P801B_on;
+            else
+                return &switch_P801B_off;
         }
         if(!strcmp(str, "2272")) {
-            if(!func)
+            if(func)
                 return &switch_2272_on;
             else
                 return &switch_2272_off;
