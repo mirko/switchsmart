@@ -16,8 +16,7 @@ int main()
     int c;
     int ret;
 
-    n_choices = create_objs_by_cfg();
-
+    n_choices = init();
 
     initscr();
     clear();
