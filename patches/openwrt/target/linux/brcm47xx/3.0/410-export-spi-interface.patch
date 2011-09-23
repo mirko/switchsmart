@@ -1,0 +1,69 @@
+diff -ruN linux-3.0.3.orig/arch/mips/bcm47xx/setup.c linux-3.0.3/arch/mips/bcm47xx/setup.c
+--- linux-3.0.3.orig/arch/mips/bcm47xx/setup.c	2011-09-23 11:42:32.330365147 +0200
++++ linux-3.0.3/arch/mips/bcm47xx/setup.c	2011-09-23 11:48:07.050363521 +0200
+@@ -33,6 +33,8 @@
+ #include <linux/platform_device.h>
+ #include <linux/serial.h>
+ #include <linux/serial_8250.h>
++#include <linux/spi/spi.h>
++#include <linux/spi/spi_gpio.h>
+ #include <asm/bootinfo.h>
+ #include <asm/reboot.h>
+ #include <asm/time.h>
+@@ -40,6 +42,8 @@
+ #include <bus.h>
+ #include <asm/mach-bcm47xx/nvram.h>
+ 
++#define ARRAY_AND_SIZE(x)   (x), ARRAY_SIZE(x)
++
+ union bcm47xx_bus bcm47xx_bus;
+ EXPORT_SYMBOL(bcm47xx_bus);
+ 
+@@ -473,6 +477,37 @@
+ }
+ fs_initcall(bcm47xx_register_flash);
+ 
++struct spi_gpio_platform_data spigpio_platform_data = {
++	.sck = 1,
++	.mosi = 6,
++	.miso = 5,
++	.num_chipselect = 1,
++};
++
++static struct platform_device spigpio_device = {
++	.name = "spi_gpio",
++	.id   = 1,
++	.dev = {
++		.platform_data = &spigpio_platform_data,
++	}
++};
++
++static struct spi_board_info bcm47xx_spi_board_info[] = {
++	{
++		.chip_select = 0,
++		.bus_num = 1,
++		.controller_data = (void *)7,
++//		.max_speed_hz = 600 * 1000, // very max toggling speed
++		.max_speed_hz = 400 * 1000,
++//		.mode = SPI_3WIRE,
++		.modalias = "rfm12",
++	},
++};
++
++static struct platform_device *bcm47xx_devices[] = {
++	&spigpio_device,
++};
++
+ static int __init bcm47xx_register_gpiodev(void)
+ {
+ 	static struct resource res = {
+@@ -480,6 +515,9 @@
+ 	};
+ 	struct platform_device *pdev;
+ 
++    spi_register_board_info(ARRAY_AND_SIZE(bcm47xx_spi_board_info));
++    platform_add_devices(ARRAY_AND_SIZE(bcm47xx_devices));
++
+ 	pdev = platform_device_register_simple("GPIODEV", 0, &res, 1);
+ 	if (!pdev) {
+ 		printk(KERN_ERR "bcm47xx: GPIODEV init failed\n");
