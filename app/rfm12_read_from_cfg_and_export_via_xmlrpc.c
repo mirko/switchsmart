@@ -12,7 +12,7 @@ struct packet pkg;
 int devs_count;
 
 int _lookup_device(xmlrpc_value* val) {
-    ptr = lookup_device((char *)val);
+    ptr = lookup_device((int)val);
     if (!ptr) {
         //sprintf(err_msg, "device lookup failed - requested device is not configured", (char *)val);
         err("device lookup failed - requested device is not configured");
@@ -38,7 +38,7 @@ static xmlrpc_value* get_config(
     int i = 0;
     for(;i<devs_count;i++) {
         structure = xmlrpc_build_value(envP,
-            "{s:s,s:s,s:s,s:i}",
+            "{s:i,s:s,s:s,s:i}",
             "id"    , dev_arr[i].id,
             "label" , dev_arr[i].label,
             "code"  , dev_arr[i].code,
@@ -61,7 +61,7 @@ static xmlrpc_value* xmlrpc_control(
 
     xmlrpc_int value;
 
-    xmlrpc_parse_value(envP, paramArrayP, "(si)", &id, &value);
+    xmlrpc_parse_value(envP, paramArrayP, "(ii)", &id, &value);
     if (envP->fault_occurred)
         return NULL;
 
@@ -73,6 +73,7 @@ static xmlrpc_value* xmlrpc_control(
     return xmlrpc_build_value(envP, "i", ret);
 }
 
+#if 0
 //deprecated - use control() instead
 static xmlrpc_value* on(
     xmlrpc_env *   const envP,
@@ -93,7 +94,9 @@ static xmlrpc_value* on(
     /* Return our result. */
     return xmlrpc_build_value(envP, "i", ret);
 }
+#endif
 
+#if 0
 //deprecated - use control() instead
 static xmlrpc_value* off(
     xmlrpc_env *   const envP,
@@ -114,22 +117,27 @@ static xmlrpc_value* off(
     /* Return our result. */
     return xmlrpc_build_value(envP, "i", ret);
 }
+#endif
 
 int main(int const argc, const char ** const argv) {
 
-    devs_count = create_objs_by_cfg();
+    devs_count = init();
 
+#if 0
     //deprecated - use control() instead
     struct xmlrpc_method_info3 const _on = {
         /* .methodName     = */ "on",
         /* .methodFunction = */ &on,
     };
+#endif
 
+#if 0
     //deprecated - use control() instead
     struct xmlrpc_method_info3 const _off = {
         /* .methodName     = */ "off",
         /* .methodFunction = */ &off,
     };
+#endif
 
     struct xmlrpc_method_info3 const _get_config = {
         /* .methodName     = */ "get_config",
@@ -157,8 +165,8 @@ int main(int const argc, const char ** const argv) {
 
     registryP = xmlrpc_registry_new(&env);
 
-    xmlrpc_registry_add_method3(&env, registryP, &_on);
-    xmlrpc_registry_add_method3(&env, registryP, &_off);
+    //xmlrpc_registry_add_method3(&env, registryP, &_on);
+    //xmlrpc_registry_add_method3(&env, registryP, &_off);
     xmlrpc_registry_add_method3(&env, registryP, &_get_config);
     xmlrpc_registry_add_method3(&env, registryP, &_control);
 

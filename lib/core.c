@@ -22,10 +22,13 @@
 #include "core.h"
 #include "iniparser/iniparser.h"
 
+#include <errno.h>
+
 #define CONFIG_PATH "/etc/rfm12.cfg"
 //#define CONFIG_PATH_ALTERNATE ""
 
 char err_msg[512];
+dictionary* cfg;
 
 void fatal(char* msg) {
     fprintf(stderr, "ERROR: %s\n -> EXITING...\n", msg);
@@ -36,23 +39,44 @@ void err(char* msg) {
     fprintf(stderr, "ERROR: %s\n", msg);
 }
 
-int create_objs_by_cfg() {
-    dictionary* cfg = iniparser_load(CONFIG_PATH);
-    dev_dict = dictionary_new(0);
+int get_count_configured_objs() {
+    // only if there's no shm segment yet - otherwise count existing array  // HAHA, how to count existing array?!
+    cfg = iniparser_load(CONFIG_PATH);
+    if (!cfg) {
+        sprintf(err_msg, "can not access config file %s", CONFIG_PATH);
+        fatal(err_msg);
+    }
+    return iniparser_getnsec(cfg);
+}
 
+#ifdef _USE_SHM
+int is_shm_already_allocated() {
+    if((shmget(SHM_KEY, NULL, (SHM_MODE | IPC_EXCL))) < 0) {
+        if (errno == ENOENT) {
+            // there is no shared memory segment identified by <SHM_KEY> yet
+            printf("no shared memory yet\n");
+            return 0;
+        }
+        else {
+            // proper error handling
+            fatal("something went wrong while checking for shared memory segment");
+        }
+    }
+    else {
+        printf("shared memory already allocated\n");
+        return 1;
+    }
+    return -EINVAL;
+}
+#endif
+
+void create_objs_by_cfg(sections_count) {
     if (!cfg) {
         sprintf(err_msg, "can not access config file %s", CONFIG_PATH);
         fatal(err_msg);
     }
 
     int i = 0;
-
-    int sections_count = iniparser_getnsec(cfg);
-
-    // allocate memory for array containing (to be) configured devices
-    dev_arr = malloc(sizeof(struct device)*sections_count);
-    if(!dev_arr)
-        fatal("can not allocate memory");
 
     char _buf[ASCIILINESZ*2+1];
 
@@ -70,7 +94,11 @@ int create_objs_by_cfg() {
         section = iniparser_getsecname(cfg, i);
         printf("reading section: %s\n", section);
 
-        dev_arr[i].id = section;
+        //dev_arr[i].id = section;
+
+        //strncpy(dev_arr[i].id, section, CONFIG_STRING_MAX_LENGTH);
+        //dev_arr[i].id[CONFIG_STRING_MAX_LENGTH-1]= '\0';
+        dev_arr[i].id = i;
 
         section__len = strlen(section);
 
@@ -92,18 +120,29 @@ int create_objs_by_cfg() {
         if(!product)
             fatal("<product> is not set in config file");
 
-        dev_arr[i].label = label;
-        dev_arr[i].code = code;
-        dev_arr[i].product = product;
+        strncpy(dev_arr[i].label, label, CONFIG_STRING_MAX_LENGTH);
+        dev_arr[i].label[CONFIG_STRING_MAX_LENGTH-1]= '\0';
+        strncpy(dev_arr[i].code, code, CONFIG_STRING_MAX_LENGTH);
+        dev_arr[i].code[CONFIG_STRING_MAX_LENGTH-1]= '\0';
+        strncpy(dev_arr[i].product, product, CONFIG_STRING_MAX_LENGTH);
+        dev_arr[i].product[CONFIG_STRING_MAX_LENGTH-1]= '\0';
+
+        //TODO: free allocated space by iniparser (ptrs as label, code, product, section point to)
+
+        //dev_arr[i].label = label;
+        //dev_arr[i].code = code;
+        //dev_arr[i].product = product;
 
         printf("created object:\n");
-        printf("  id:      %s\n", dev_arr[i].id);
+        printf("  id:      %i\n", dev_arr[i].id);
         printf("  label:   %s\n", dev_arr[i].label);
         printf("  product: %s\n", dev_arr[i].product);
         printf("  code:    %s\n", dev_arr[i].code);
 
-        printf("put into dict: %s\n", dev_arr[i].id);
-        dictionary_set(dev_dict, dev_arr[i].id, (char *)&dev_arr[i], 0);
+//        printf("put into dict: %s\n", dev_arr[i].id);
+//        dictionary_set(dev_dict, dev_arr[i].id, (char *)&dev_arr[i], 0);
+//        printf("device: %d\n", i);
+//        printf("Label: %s\n", (((struct device*)dictionary_get(dev_dict, dev_arr[0].id, NULL))->label));
     }
 
     // // sections count should represent the count of confnigured devices from now on
@@ -111,7 +150,62 @@ int create_objs_by_cfg() {
     //     sections_count--;
     //
 
-    return sections_count;
+    //return sections_count;
+}
+
+
+int init() {
+#ifdef _USE_SHM
+    #pragma message("using shared memory")
+    int shmid;
+    int dev_arr_cnt;
+    void* ptr;
+
+    if(is_shm_already_allocated()) {
+        if((shmid = shmget(SHM_KEY, sizeof(int), SHM_MODE)) < 0)
+            fatal("can't get shared memory segment");
+        if((ptr = shmat(shmid, NULL, 0)) == (void *)-1) // why?!
+            fatal("can't attach to shared memory segment");
+
+        memcpy(&dev_arr_cnt, ptr, sizeof(int));
+
+        shmdt(ptr);
+
+        printf("Allocated devices: %d\n", dev_arr_cnt);
+
+        if((shmid = shmget(SHM_KEY, sizeof(int)+dev_arr_cnt*sizeof(struct device), SHM_MODE)) < 0)
+            fatal("can't get shared memory segment");
+        if((ptr = shmat(shmid, NULL, 0)) == (void *)-1) // why?!
+            fatal("can't attach to shared memory segment");
+        
+        dev_arr = ptr + sizeof(int);
+
+        printf("successfully attached to shared memory\n");
+        printf("label of element 0: %s\n", dev_arr[0].label);
+        printf("label of element 1: %s\n", dev_arr[1].label);
+    }
+    else {
+        // no server instance running yet...
+        dev_arr_cnt = get_count_configured_objs();
+        printf("read %d objects (configured devices) into memory\n", dev_arr_cnt);
+        printf("allocating %lo bytes of shared memory\n", sizeof(int)+dev_arr_cnt*sizeof(struct device));
+
+        //if((shmid = shmget(SHM_KEY, sizeof(int) + dev_arr_cnt*sizeof(struct device) + sizeof(dictionary)+dev_arr_cnt*sizeof(char*)+dev_arr_cnt*sizeof(char*)+dev_arr_cnt*sizeof(unsigned), IPC_CREAT | SHM_MODE)) < 0)
+        if((shmid = shmget(SHM_KEY, sizeof(int) + dev_arr_cnt*sizeof(struct device), IPC_CREAT | SHM_MODE)) < 0)
+            fatal("can't create shared memory segment");
+        if((ptr = shmat(shmid, NULL, 0)) == (void *)-1) // why?!
+            fatal("can't attach to shared memory segment");
+
+        memcpy(ptr, &dev_arr_cnt, sizeof(int));
+        
+        dev_arr = ptr + sizeof(int);
+
+        create_objs_by_cfg(dev_arr_cnt);
+    }
+    return dev_arr_cnt;
+#else
+    // do usual malloc stuff here
+#endif
 }
 
 void* str_to_func_ptr(char* str, char func) {
@@ -128,6 +222,7 @@ void* str_to_func_ptr(char* str, char func) {
                 return &switch_2272_off;
         }
         fatal("<product> set for this device does not exist");
+        return NULL;
 }
 
 int control(struct device* dev, int value) {
@@ -144,10 +239,12 @@ int control(struct device* dev, int value) {
     return 0;
 }
 
-struct device* lookup_device(char* id) {
-    if (!dev_dict)
+//struct device* lookup_device(char* id) {
+struct device* lookup_device(int id) {
+    //if (!dev_dict)
+    if (!dev_arr)
         fatal("configuration not initialized but accessed");
-    return (struct device*)dictionary_get(dev_dict, id, NULL);
+    return (&dev_arr[id]);
 }
 
 int pkg_send(struct packet *_packet) {

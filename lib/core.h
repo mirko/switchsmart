@@ -26,12 +26,22 @@
 #include <stdio.h>
 
 #include "switches/core.h"
-#include "iniparser/dictionary.h"
+//#include "iniparser/dictionary.h"
+
+#define CONFIG_STRING_MAX_LENGTH 128
 
 #define DEVICE_NAME "/dev/rfm12"
 
 // if changing, do not forget to change the associated within the kernel module as well
 #define DATA_MAX 512
+
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
+#define SHM_KEY 234547
+#define SHM_MODE 0666
+#define SHM_SIZE 512
 
 
 /* Since we're operating timing critical and need precision of hundreds of microseconds,
@@ -71,24 +81,28 @@ enum type {
 
 struct device {
     int type;
-    char* id;
-    char* label;
-    char* category;
+    //char id[CONFIG_STRING_MAX_LENGTH];
+    int id;
+    char label[CONFIG_STRING_MAX_LENGTH];
+    char category[CONFIG_STRING_MAX_LENGTH];
     int state; // MIN_INT = device (currently) not available
-    char* code;
-    struct packet (*on)(char* code); // deprecated
-    struct packet (*off)(char* code); // deprecated
-    char* product;
+    char code[CONFIG_STRING_MAX_LENGTH];
+    //struct packet (*on)(char* code); // deprecated
+    //struct packet (*off)(char* code); // deprecated
+    char product[CONFIG_STRING_MAX_LENGTH];
 };
 
 struct device* dev_arr;
-dictionary* dev_dict;
+//dictionary* dev_dict;
 
-int create_objs_by_cfg(void);
-struct device* lookup_device(char* id);
+//int create_objs_by_cfg(void);
+void create_objs_by_cfg();
+//struct device* lookup_device(char* id);
+struct device* lookup_device(int id);
 int pkg_send(struct packet *_packet);
 void fatal(char* msg);
 void err(char* msg);
 int control(struct device* dev, int value);
+int init();
 
 #endif
