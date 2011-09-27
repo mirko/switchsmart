@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <ncurses.h>
+#include <signal.h>
 #include "../../lib/core.h"
 
 #define WIDTH 20
@@ -7,10 +8,19 @@
 
 int n_choices;
 
+void sig_handler(int sig) {
+	printf("got signal: %d\n", sig);
+    dt_shm();
+    exit(0);
+}
+
 void print_menu(WINDOW *menu_win, int highlight);
 
-int main()
-{   WINDOW *menu_win;
+int main() {
+    signal(SIGINT, sig_handler);
+    signal(SIGTERM, sig_handler);
+
+    WINDOW *menu_win;
     int highlight = 1;
     int choice = 0;
     int c;

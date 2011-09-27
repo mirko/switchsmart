@@ -30,6 +30,10 @@
 char err_msg[512];
 dictionary* cfg;
 
+char mode;
+int shm_id;
+void* shm_ptr;
+
 void fatal(char* msg) {
     fprintf(stderr, "ERROR: %s\n -> EXITING...\n", msg);
     exit(23);
@@ -84,6 +88,7 @@ void create_objs_by_cfg(sections_count) {
     char* label;
     char* code;
     char* product;
+    char* category;
 
     int section__len;
 
@@ -120,12 +125,19 @@ void create_objs_by_cfg(sections_count) {
         if(!product)
             fatal("<product> is not set in config file");
 
+        strcpy(_buf+section__len+1, "category");
+        category = iniparser_getstring(cfg, _buf, NULL);
+        if(!category)
+            fatal("<category> is not set in config file");
+
         strncpy(dev_arr[i].label, label, CONFIG_STRING_MAX_LENGTH);
         dev_arr[i].label[CONFIG_STRING_MAX_LENGTH-1]= '\0';
         strncpy(dev_arr[i].code, code, CONFIG_STRING_MAX_LENGTH);
         dev_arr[i].code[CONFIG_STRING_MAX_LENGTH-1]= '\0';
         strncpy(dev_arr[i].product, product, CONFIG_STRING_MAX_LENGTH);
         dev_arr[i].product[CONFIG_STRING_MAX_LENGTH-1]= '\0';
+        strncpy(dev_arr[i].category, category, CONFIG_STRING_MAX_LENGTH);
+        dev_arr[i].category[CONFIG_STRING_MAX_LENGTH-1]= '\0';
 
         //TODO: free allocated space by iniparser (ptrs as label, code, product, section point to)
 
@@ -137,6 +149,7 @@ void create_objs_by_cfg(sections_count) {
         printf("  id:      %i\n", dev_arr[i].id);
         printf("  label:   %s\n", dev_arr[i].label);
         printf("  product: %s\n", dev_arr[i].product);
+        printf("  category: %s\n", dev_arr[i].category);
         printf("  code:    %s\n", dev_arr[i].code);
 
 //        printf("put into dict: %s\n", dev_arr[i].id);
@@ -157,48 +170,48 @@ void create_objs_by_cfg(sections_count) {
 int init() {
 #ifdef _USE_SHM
     #pragma message("using shared memory")
-    int shmid;
     int dev_arr_cnt;
-    void* ptr;
 
     if(is_shm_already_allocated()) {
-        if((shmid = shmget(SHM_KEY, sizeof(int), SHM_MODE)) < 0)
+        mode = 'c';
+
+        if((shm_id = shmget(SHM_KEY, sizeof(int), SHM_MODE)) < 0)
             fatal("can't get shared memory segment");
-        if((ptr = shmat(shmid, NULL, 0)) == (void *)-1) // why?!
+        if((shm_ptr = shmat(shm_id, NULL, 0)) == (void *)-1) // why?!
             fatal("can't attach to shared memory segment");
 
-        memcpy(&dev_arr_cnt, ptr, sizeof(int));
+        memcpy(&dev_arr_cnt, shm_ptr, sizeof(int));
 
-        shmdt(ptr);
+        shmdt(shm_ptr);
 
         printf("Allocated devices: %d\n", dev_arr_cnt);
 
-        if((shmid = shmget(SHM_KEY, sizeof(int)+dev_arr_cnt*sizeof(struct device), SHM_MODE)) < 0)
+        if((shm_id = shmget(SHM_KEY, sizeof(int)+dev_arr_cnt*sizeof(struct device), SHM_MODE)) < 0)
             fatal("can't get shared memory segment");
-        if((ptr = shmat(shmid, NULL, 0)) == (void *)-1) // why?!
+        if((shm_ptr = shmat(shm_id, NULL, 0)) == (void *)-1) // why?!
             fatal("can't attach to shared memory segment");
         
-        dev_arr = ptr + sizeof(int);
+        dev_arr = shm_ptr + sizeof(int);
 
         printf("successfully attached to shared memory\n");
-        printf("label of element 0: %s\n", dev_arr[0].label);
-        printf("label of element 1: %s\n", dev_arr[1].label);
     }
     else {
+        mode = 's';
+
         // no server instance running yet...
         dev_arr_cnt = get_count_configured_objs();
         printf("read %d objects (configured devices) into memory\n", dev_arr_cnt);
         printf("allocating %lo bytes of shared memory\n", sizeof(int)+dev_arr_cnt*sizeof(struct device));
 
-        //if((shmid = shmget(SHM_KEY, sizeof(int) + dev_arr_cnt*sizeof(struct device) + sizeof(dictionary)+dev_arr_cnt*sizeof(char*)+dev_arr_cnt*sizeof(char*)+dev_arr_cnt*sizeof(unsigned), IPC_CREAT | SHM_MODE)) < 0)
-        if((shmid = shmget(SHM_KEY, sizeof(int) + dev_arr_cnt*sizeof(struct device), IPC_CREAT | SHM_MODE)) < 0)
+        //if((shm_id = shmget(SHM_KEY, sizeof(int) + dev_arr_cnt*sizeof(struct device) + sizeof(dictionary)+dev_arr_cnt*sizeof(char*)+dev_arr_cnt*sizeof(char*)+dev_arr_cnt*sizeof(unsigned), IPC_CREAT | SHM_MODE)) < 0)
+        if((shm_id = shmget(SHM_KEY, sizeof(int) + dev_arr_cnt*sizeof(struct device), IPC_CREAT | SHM_MODE)) < 0)
             fatal("can't create shared memory segment");
-        if((ptr = shmat(shmid, NULL, 0)) == (void *)-1) // why?!
+        if((shm_ptr = shmat(shm_id, NULL, 0)) == (void *)-1) // why?!
             fatal("can't attach to shared memory segment");
 
-        memcpy(ptr, &dev_arr_cnt, sizeof(int));
+        memcpy(shm_ptr, &dev_arr_cnt, sizeof(int));
         
-        dev_arr = ptr + sizeof(int);
+        dev_arr = shm_ptr + sizeof(int);
 
         create_objs_by_cfg(dev_arr_cnt);
     }
@@ -207,6 +220,14 @@ int init() {
     // do usual malloc stuff here
 #endif
 }
+
+#ifdef _USE_SHM
+void dt_shm() {
+    shmdt(shm_ptr);
+    if (mode == 's')
+        shmctl(shm_id, IPC_RMID, NULL);
+}
+#endif
 
 void* str_to_func_ptr(char* str, char func) {
         if(!strcmp(str, "P801B")) {

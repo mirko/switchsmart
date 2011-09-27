@@ -39,7 +39,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
-#define SHM_KEY 234547
+#define SHM_KEY 234548
 #define SHM_MODE 0666
 #define SHM_SIZE 512
 
@@ -104,5 +104,6 @@ void fatal(char* msg);
 void err(char* msg);
 int control(struct device* dev, int value);
 int init();
+void dt_shm();
 
 #endif

@@ -1,6 +1,7 @@
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/server.h>
 #include <xmlrpc-c/server_abyss.h>
+#include <signal.h>
 
 #include "../lib/core.h"
 
@@ -23,6 +24,12 @@ int _lookup_device(xmlrpc_value* val) {
     return 1;
 }
 
+void sig_handler(int sig) {
+	printf("got signal: %d\n", sig);
+    dt_shm();
+    exit(0);
+}
+
 static xmlrpc_value* get_config(
     xmlrpc_env *   const envP,
     xmlrpc_value * const paramArrayP,
@@ -38,11 +45,12 @@ static xmlrpc_value* get_config(
     int i = 0;
     for(;i<devs_count;i++) {
         structure = xmlrpc_build_value(envP,
-            "{s:i,s:s,s:s,s:i}",
-            "id"    , dev_arr[i].id,
-            "label" , dev_arr[i].label,
-            "code"  , dev_arr[i].code,
-            "state" , dev_arr[i].state
+            "{s:i,s:s,s:s,s:s,s:i}",
+            "id"      , dev_arr[i].id,
+            "label"   , dev_arr[i].label,
+            "code"    , dev_arr[i].code,
+            "category", dev_arr[i].category,
+            "state"   , dev_arr[i].state
         );
         xmlrpc_array_append_item(envP, arr, structure);
         printf("added %i\n", i);
@@ -120,6 +128,8 @@ static xmlrpc_value* off(
 #endif
 
 int main(int const argc, const char ** const argv) {
+    signal(SIGINT, sig_handler);
+    signal(SIGTERM, sig_handler);
 
     devs_count = init();
 
