@@ -51,7 +51,7 @@ static xmlrpc_value* get_config(
             "code"    , dev_arr[i].code,
             "category", dev_arr[i].category,
             "state"   , dev_arr[i].state,
-            "product" , dev_arr[i].state
+            "product" , dev_arr[i].product
         );
         xmlrpc_array_append_item(envP, arr, structure);
         printf("added %i\n", i);
