@@ -27,7 +27,6 @@
 char* _2272_convert(char* code) {
     int i;
     for(i=0;code[i]!='\0';i++) {
-        //printf("<i> is: %d, code[%d]: %c\n", i, i, code[i]);
         switch(code[i]) {
             case '0':
                 memcpy(buf+i*WORD_SIZE, "100110", WORD_SIZE); // 0 = 100 110 = dip-switch is down
@@ -43,7 +42,6 @@ char* _2272_convert(char* code) {
 }
 
 struct packet _2272_ctrl_pkg(char* code) {
-    printf("switch\n");
     char data[DATA_MAX];
     memcpy(data, _2272_convert(code), WORD_SIZE*10);
     data[WORD_SIZE*10] = '\0';
@@ -57,7 +55,6 @@ struct packet _2272_ctrl_pkg(char* code) {
 
 struct packet switch_2272_on(char* code) {
     //TODO: check length of code
-    printf("switch on\n");
     struct packet pkg = _2272_ctrl_pkg(code);
     memcpy(pkg.data+10*WORD_SIZE, "100100100110100", 15); // on => 100 100 100 110 + 100 SYNC
     return pkg;
@@ -65,7 +62,6 @@ struct packet switch_2272_on(char* code) {
 
 struct packet switch_2272_off(char* code) {
     //TODO: check length of code
-    printf("switch off\n");
     struct packet pkg = _2272_ctrl_pkg(code);
     memcpy(pkg.data+10*WORD_SIZE, "100110100100100", 15); // off => 100 110 100 100 + 100 SYNC
     return pkg;
