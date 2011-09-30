@@ -23,6 +23,7 @@
 #include "iniparser/iniparser.h"
 
 #include <errno.h>
+#include <unistd.h> // for fork()
 
 #define CONFIG_PATH "/etc/rfm12.cfg"
 //#define CONFIG_PATH_ALTERNATE ""
@@ -31,8 +32,11 @@ char err_msg[512];
 dictionary* cfg;
 
 char mode;
+char use_timeouts = 0x0;
+
 int shm_id;
 void* shm_ptr;
+int dev_arr_cnt;
 
 void fatal(char* msg) {
     fprintf(stderr, "ERROR: %s\n -> EXITING...\n", msg);
@@ -89,12 +93,17 @@ void create_objs_by_cfg(sections_count) {
     char* code;
     char* product;
     char* category;
+    int timeout = 0;
 
     int section__len;
 
     // the iniparser does not allow us to iterate over sections but just calling them by name -
     // workarounding that is hacky - however actually I don't care since it keeps the bins small
     // and is called just once at startup
+    //
+    
+    printf("iterating '%i' times...\n", sections_count);
+
     for (;i<sections_count;i++) {
         section = iniparser_getsecname(cfg, i);
         printf("reading section: %s\n", section);
@@ -130,6 +139,11 @@ void create_objs_by_cfg(sections_count) {
         if(!category)
             fatal("<category> is not set in config file");
 
+        strcpy(_buf+section__len+1, "timeout");
+        timeout = iniparser_getint(cfg, _buf, 0);
+        if(timeout)
+            use_timeouts = 0x1;
+
         strncpy(dev_arr[i].label, label, CONFIG_STRING_MAX_LENGTH);
         dev_arr[i].label[CONFIG_STRING_MAX_LENGTH-1]= '\0';
         strncpy(dev_arr[i].code, code, CONFIG_STRING_MAX_LENGTH);
@@ -138,6 +152,8 @@ void create_objs_by_cfg(sections_count) {
         dev_arr[i].product[CONFIG_STRING_MAX_LENGTH-1]= '\0';
         strncpy(dev_arr[i].category, category, CONFIG_STRING_MAX_LENGTH);
         dev_arr[i].category[CONFIG_STRING_MAX_LENGTH-1]= '\0';
+        dev_arr[i].timeout = timeout;
+        dev_arr[i].switched_last = 0;
 
         //TODO: free allocated space by iniparser (ptrs as label, code, product, section point to)
 
@@ -146,17 +162,22 @@ void create_objs_by_cfg(sections_count) {
         //dev_arr[i].product = product;
 
         printf("created object:\n");
-        printf("  id:      %i\n", dev_arr[i].id);
-        printf("  label:   %s\n", dev_arr[i].label);
-        printf("  product: %s\n", dev_arr[i].product);
-        printf("  category: %s\n", dev_arr[i].category);
-        printf("  code:    %s\n", dev_arr[i].code);
+        printf("  id:            %i\n", dev_arr[i].id);
+        printf("  label:         %s\n", dev_arr[i].label);
+        printf("  product:       %s\n", dev_arr[i].product);
+        printf("  category:      %s\n", dev_arr[i].category);
+        printf("  code:          %s\n", dev_arr[i].code);
+        printf("  timeout:       %i\n", dev_arr[i].timeout);
+        printf("  swtched_last:  %i\n", dev_arr[i].switched_last);
 
 //        printf("put into dict: %s\n", dev_arr[i].id);
 //        dictionary_set(dev_dict, dev_arr[i].id, (char *)&dev_arr[i], 0);
 //        printf("device: %d\n", i);
 //        printf("Label: %s\n", (((struct device*)dictionary_get(dev_dict, dev_arr[0].id, NULL))->label));
     }
+
+    if (use_timeouts)
+        printf("timeouts are specified for at least one device - starting timer thread...\n");
 
     // // sections count should represent the count of confnigured devices from now on
     // if iniparser_find_entry("general")
@@ -166,11 +187,24 @@ void create_objs_by_cfg(sections_count) {
     //return sections_count;
 }
 
+int timer() {
+    printf("[timer] timer started...\n");
+    int i;
+    while (1) {
+        for(i=0;i<dev_arr_cnt;i++) {
+            if(((time(NULL) - dev_arr[i].switched_last) > dev_arr[i].timeout) && (dev_arr[i].timeout > 0) && (dev_arr[i].state > 0)) {
+                printf("[timer] switch off device %d...\n", dev_arr[i].id);
+                control(&dev_arr[i], 0);
+            }
+            sleep(1);
+            i++;
+        }
+    }
+}
 
 int init() {
 #ifdef _USE_SHM
     #pragma message("using shared memory")
-    int dev_arr_cnt;
 
     if(is_shm_already_allocated()) {
         mode = 'c';
@@ -181,6 +215,7 @@ int init() {
             fatal("can't attach to shared memory segment");
 
         memcpy(&dev_arr_cnt, shm_ptr, sizeof(int));
+	    //dev_arr_cnt = *((int *)shm_ptr);
 
         shmdt(shm_ptr);
 
@@ -210,12 +245,23 @@ int init() {
             fatal("can't attach to shared memory segment");
 
         memcpy(shm_ptr, &dev_arr_cnt, sizeof(int));
+	    //dev_arr_cnt = *((int *)shm_ptr);
         
         dev_arr = shm_ptr + sizeof(int);
 
         create_objs_by_cfg(dev_arr_cnt);
     }
+
+    switch(fork()) {
+        case 0:
+            printf("successfully forked - starting timer...\n");
+            timer();
+        case -1:
+            fatal("fork() failed");
+    }
+
     return dev_arr_cnt;
+
 #else
     // do usual malloc stuff here
 #endif
@@ -242,7 +288,7 @@ void* str_to_func_ptr(char* str, char func) {
             else
                 return &switch_2272_off;
         }
-        fatal("<product> set for this device does not exist");
+        fatal("spcified product type not supported");
         return NULL;
 }
 
@@ -250,13 +296,38 @@ int control(struct device* dev, int value) {
     struct packet (*ptr)();
     struct packet pkg;
 
+//    printf("--- object before:\n");
+//    printf("  id:            %i\n", dev->id);
+//    printf("  label:         %s\n", dev->label);
+//    printf("  product:       %s\n", dev->product);
+//    printf("  category:      %s\n", dev->category);
+//    printf("  code:          %s\n", dev->code);
+//    printf("  timeout:       %i\n", dev->timeout);
+//    printf("  swtched_last:  %i\n", dev->switched_last);
+
+    // reset timer when device state is going to be changed to anything but off
+    if ((value > 0) && (dev->timeout > 0)) {
+        printf("reset timer for device %d\n", dev->id);
+        dev->switched_last = time(NULL);
+    }
+
     ptr = str_to_func_ptr(dev->product, value);
     pkg = (ptr)(dev->code);
+
+//    printf("+++ object after:\n");
+//    printf("  id:            %i\n", dev->id);
+//    printf("  label:         %s\n", dev->label);
+//    printf("  product:       %s\n", dev->product);
+//    printf("  category:      %s\n", dev->category);
+//    printf("  code:          %s\n", dev->code);
+//    printf("  timeout:       %i\n", dev->timeout);
+//    printf("  swtched_last:  %i\n", dev->switched_last);
 
     if (pkg_send(&pkg)) {
         dev->state = value;
         return 1;
     }
+
     return 0;
 }
 
@@ -269,6 +340,7 @@ struct device* lookup_device(int id) {
 }
 
 int pkg_send(struct packet *_packet) {
+    //TODO: open device once, globally
     FILE *fd = fopen(DEVICE_NAME, "w");
     size_t res;
 

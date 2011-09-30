@@ -45,13 +45,15 @@ static xmlrpc_value* get_config(
     int i = 0;
     for(;i<devs_count;i++) {
         structure = xmlrpc_build_value(envP,
-            "{s:i,s:s,s:s,s:s,s:i,s:s}",
+            "{s:i,s:s,s:s,s:s,s:i,s:s,s:i,s:i}",
             "id"      , dev_arr[i].id,
             "label"   , dev_arr[i].label,
             "code"    , dev_arr[i].code,
             "category", dev_arr[i].category,
             "state"   , dev_arr[i].state,
-            "product" , dev_arr[i].product
+            "product" , dev_arr[i].product,
+            "timeout" , dev_arr[i].timeout,
+            "switched_last" , dev_arr[i].switched_last
         );
         xmlrpc_array_append_item(envP, arr, structure);
         printf("added %i\n", i);

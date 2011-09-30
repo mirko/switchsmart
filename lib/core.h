@@ -38,6 +38,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <time.h>
 
 #define SHM_KEY 234548
 #define SHM_MODE 0666
@@ -90,6 +91,8 @@ struct device {
     //struct packet (*on)(char* code); // deprecated
     //struct packet (*off)(char* code); // deprecated
     char product[CONFIG_STRING_MAX_LENGTH];
+    int timeout; // in seconds
+    int switched_last; // timestamp
 };
 
 struct device* dev_arr;
