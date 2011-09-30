@@ -93,7 +93,7 @@ void create_objs_by_cfg(sections_count) {
     char* code;
     char* product;
     char* category;
-    int timeout = 0;
+    int timeout;
 
     int section__len;
 
@@ -102,7 +102,9 @@ void create_objs_by_cfg(sections_count) {
     // and is called just once at startup
     //
     
+#ifdef LOG
     printf("iterating '%i' times...\n", sections_count);
+#endif
 
     for (;i<sections_count;i++) {
         section = iniparser_getsecname(cfg, i);
@@ -140,7 +142,7 @@ void create_objs_by_cfg(sections_count) {
             fatal("<category> is not set in config file");
 
         strcpy(_buf+section__len+1, "timeout");
-        timeout = iniparser_getint(cfg, _buf, 0);
+        timeout = iniparser_getint(cfg, _buf, -1);
         if(timeout)
             use_timeouts = 0x1;
 
@@ -153,7 +155,7 @@ void create_objs_by_cfg(sections_count) {
         strncpy(dev_arr[i].category, category, CONFIG_STRING_MAX_LENGTH);
         dev_arr[i].category[CONFIG_STRING_MAX_LENGTH-1]= '\0';
         dev_arr[i].timeout = timeout;
-        dev_arr[i].switched_last = 0;
+        dev_arr[i].switched_on_for = 0;
 
         //TODO: free allocated space by iniparser (ptrs as label, code, product, section point to)
 
@@ -168,7 +170,7 @@ void create_objs_by_cfg(sections_count) {
         printf("  category:      %s\n", dev_arr[i].category);
         printf("  code:          %s\n", dev_arr[i].code);
         printf("  timeout:       %i\n", dev_arr[i].timeout);
-        printf("  swtched_last:  %i\n", dev_arr[i].switched_last);
+        printf("  swtched_on:    %i\n", dev_arr[i].switched_on_for);
 
 //        printf("put into dict: %s\n", dev_arr[i].id);
 //        dictionary_set(dev_dict, dev_arr[i].id, (char *)&dev_arr[i], 0);
@@ -188,16 +190,31 @@ void create_objs_by_cfg(sections_count) {
 }
 
 int timer() {
+#ifdef LOG_TIMER
     printf("[timer] timer started...\n");
+#endif
+    int timer_interval = 2; // timer interval in seconds
     int i;
     while (1) {
+        sleep(timer_interval);
+#ifdef LOG_TIMER
+        printf("[timer] check...\n");
+#endif
         for(i=0;i<dev_arr_cnt;i++) {
-            if(((time(NULL) - dev_arr[i].switched_last) > dev_arr[i].timeout) && (dev_arr[i].timeout > 0) && (dev_arr[i].state > 0)) {
-                printf("[timer] switch off device %d...\n", dev_arr[i].id);
-                control(&dev_arr[i], 0);
+            if(dev_arr[i].state > 0) {
+#ifdef LOG_TIMER
+                printf("[timer] increase value 'switched_on_for' for device %d\n", dev_arr[i].id);
+#endif
+                dev_arr[i].switched_on_for = dev_arr[i].switched_on_for + timer_interval;
+                //if((dev_arr[i].timeout > 0) && ((dev_arr[i].timeout - dev_arr[i].switched_on_for - timer_interval) > 0)) {
+                if( (!(dev_arr[i].timeout < 0)) && (!((dev_arr[i].timeout - dev_arr[i].switched_on_for) > 0))) {
+#ifdef LOG_TIMER
+                    printf("[timer] switch off device %d...\n", dev_arr[i].id);
+#endif
+                    dev_arr[i].timeout = dev_arr[i].switched_on_for;
+                    control(&dev_arr[i], 0);
+                }
             }
-            sleep(1);
-            i++;
         }
     }
 }
@@ -254,7 +271,9 @@ int init() {
 
     switch(fork()) {
         case 0:
+#ifdef LOG
             printf("successfully forked - starting timer...\n");
+#endif
             timer();
         case -1:
             fatal("fork() failed");
@@ -305,11 +324,12 @@ int control(struct device* dev, int value) {
 //    printf("  timeout:       %i\n", dev->timeout);
 //    printf("  swtched_last:  %i\n", dev->switched_last);
 
-    // reset timer when device state is going to be changed to anything but off
-    if ((value > 0) && (dev->timeout > 0)) {
-        printf("reset timer for device %d\n", dev->id);
-        dev->switched_last = time(NULL);
-    }
+    if (dev->state > 0) {
+        if ((value > 0) && (dev->timeout > 0))
+            dev->switched_on_for = dev->switched_on_for - 10; 
+        if (value == 0)
+            dev->switched_on_for = 0;
+        }
 
     ptr = str_to_func_ptr(dev->product, value);
     pkg = (ptr)(dev->code);

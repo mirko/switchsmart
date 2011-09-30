@@ -92,7 +92,7 @@ struct device {
     //struct packet (*off)(char* code); // deprecated
     char product[CONFIG_STRING_MAX_LENGTH];
     int timeout; // in seconds
-    int switched_last; // timestamp
+    int switched_on_for; // in seconds
 };
 
 struct device* dev_arr;

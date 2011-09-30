@@ -53,10 +53,9 @@ static xmlrpc_value* get_config(
             "state"   , dev_arr[i].state,
             "product" , dev_arr[i].product,
             "timeout" , dev_arr[i].timeout,
-            "switched_last" , dev_arr[i].switched_last
+            "switched_on_for" , dev_arr[i].switched_on_for
         );
         xmlrpc_array_append_item(envP, arr, structure);
-        printf("added %i\n", i);
     }
 
     /* Return our result. */
