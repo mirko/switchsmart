@@ -19,32 +19,12 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 
-CFLAGS += -Wall
+obj-m += rfm12.o
 
-all: mod_compile lib_compile app_compile uis_compile
+EXTRA_CFLAGS += -O0
 
-clean: mod_clean lib_clean app_clean uis_clean
+all:
+		make -C /lib/modules/$(shell uname -r)/build M=$(CURDIR) modules
 
-mod_compile:
-	$(MAKE) -C drvs/rfm12/linux
-
-lib_compile:
-	$(MAKE) -C lib
-
-app_compile: lib_compile
-	$(MAKE) -C app
-
-uis_compile: lib_compile
-	$(MAKE) -C uis
-
-mod_clean:
-	$(MAKE) clean -C drvs/rfm12/linux
-
-lib_clean:
-	$(MAKE) clean -C lib
-
-app_clean:
-	$(MAKE) clean -C app
-
-uis_clean:
-	$(MAKE) clean -C uis
+clean:
+		make -C /lib/modules/$(shell uname -r)/build M=$(CURDIR) clean
