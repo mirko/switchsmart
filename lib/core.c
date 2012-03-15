@@ -361,22 +361,26 @@ struct device* lookup_device(int id) {
 
 int pkg_send(struct packet *_packet) {
     //TODO: open device once, globally
-    FILE *fd = fopen(DEVICE_NAME, "w");
-    size_t res;
+    if( access(DEVICE_NAME, F_OK) > 0 ) {
+        FILE *fd = fopen(DEVICE_NAME, "w");
+        size_t res;
 
-    //printf("duration: %u\n", _packet->duration);
-    //printf("count: %u\n", _packet->count);
-    //printf("data: %s\n", _packet->data);
-    //printf("sizeof: %lu\n", sizeof(_packet));
+        //printf("duration: %u\n", _packet->duration);
+        //printf("count: %u\n", _packet->count);
+        //printf("data: %s\n", _packet->data);
+        //printf("sizeof: %lu\n", sizeof(*_packet));
 
-    if (fd == NULL) {
-        printf("can not open device: %s\n", DEVICE_NAME);
-        return EXIT_FAILURE;
+        if (fd == NULL) {
+            printf("can not open device: %s\n", DEVICE_NAME);
+            return EXIT_FAILURE;
+        }
+        if ((res = fwrite(_packet, 1, sizeof(*_packet), fd)) != (sizeof(*_packet))) {
+            printf("couldn't write full packet of %lu Bytes but only %lu Bytes\n", sizeof(*_packet), res);
+            return EXIT_FAILURE;
+        }
+        fclose(fd);
     }
-    if ((res = fwrite(_packet, 1, sizeof(*_packet), fd)) != (sizeof(*_packet))) {
-        printf("couldn't write full packet of %lu Bytes but only %lu Bytes\n", sizeof(*_packet), res);
-        return EXIT_FAILURE;
-    }
-    fclose(fd);
+    else
+        printf("NOTICE: NO HARDWARE DEVICE PRESENT - RUNNING IN DUMMY MODE..\n");
     return 1;
 }
