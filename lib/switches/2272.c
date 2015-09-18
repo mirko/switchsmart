@@ -20,49 +20,37 @@
 //
 
 #include <string.h>
+#include <stdio.h>
 
 #include "2272.h"
-#define WORD_SIZE 6
 
-char* _2272_convert(char* code) {
+static int _2272_ctrl_pkg(struct packet *packet, const char* code, const char *suffix) {
     int i;
-    for(i=0;code[i]!='\0';i++) {
-        switch(code[i]) {
-            case '0':
-                memcpy(buf+i*WORD_SIZE, "100110", WORD_SIZE); // 0 = 100 110 = dip-switch is down
-                break;
-            case '1':
-                memcpy(buf+i*WORD_SIZE, "100100", WORD_SIZE); // 1 = 100 100 = dip-switch is up
-                break;
-            default:
-                printf("BUG!\n");
-        }
-    }
-    return (char *)&buf;
-}
+    memset(packet, 0, sizeof(*packet));
+    packet->duration = 500 - SPI_TRANSFER_TIME;
+    packet->count    = 10;
 
-struct packet _2272_ctrl_pkg(char* code) {
-    char data[DATA_MAX];
-    memcpy(data, _2272_convert(code), WORD_SIZE*10);
-    data[WORD_SIZE*10] = '\0';
-    struct packet pkg = {
-        .duration = 500 - SPI_TRANSFER_TIME,
-        .count = 10,
-    };
-    strcpy(pkg.data, data);
-    return pkg;
+    for (i=0;i<6;++i)
+        if ((code[i] & 0xfe) != '0' )
+            return -1;
+    if (code[7])
+            return -1;
+
+    snprintf(packet.data, DATA_MAX, "1001%c01001%c01001%c01001%c01001%c01001%c0%s",
+        code[0]^1,code[1]^1,code[2]^1,code[3]^1,code[5]^1,code[6]^1, suffix);
+    return 0;
 }
 
 struct packet switch_2272_on(char* code) {
-    //TODO: check length of code
-    struct packet pkg = _2272_ctrl_pkg(code);
-    memcpy(pkg.data+10*WORD_SIZE, "100100100110100", 15); // on => 100 100 100 110 + 100 SYNC
+    struct packet pkg;
+    if (_2272_ctrl_pkg(&pkg, code, "100100100110100"))  // on => 100 100 100 110 + 100 SYNC
+        printf("BUG!\n");
     return pkg;
 }
 
 struct packet switch_2272_off(char* code) {
-    //TODO: check length of code
-    struct packet pkg = _2272_ctrl_pkg(code);
-    memcpy(pkg.data+10*WORD_SIZE, "100110100100100", 15); // off => 100 110 100 100 + 100 SYNC
+    struct packet pkg;
+    if (_2272_ctrl_pkg(&pkg, code, "100110100100100")) // off => 100 110 100 100 + 100 SYNC
+        printf("BUG!\n");
     return pkg;
 }
